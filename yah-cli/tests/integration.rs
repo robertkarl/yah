@@ -11,7 +11,7 @@ fn classify_safe_command() {
         .args(["classify", "ls"])
         .assert()
         .success()
-        .stdout(predicate::str::contains("clean"));
+        .stdout(predicate::str::contains("CLEAN"));
 }
 
 #[test]
@@ -65,7 +65,7 @@ fn classify_stdin() {
         .write_stdin("ls\ncurl example.com\n")
         .assert()
         .success()
-        .stdout(predicate::str::contains("clean"))
+        .stdout(predicate::str::contains("CLEAN"))
         .stdout(predicate::str::contains("net-egress"));
 }
 

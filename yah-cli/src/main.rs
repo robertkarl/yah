@@ -171,8 +171,8 @@ fn main() {
             } else {
                 println!("{}", "Capabilities:".bold());
                 for cap in sorted_caps(&caps) {
-                    let (icon, desc) = cap_description(&cap);
-                    println!("  {} {} — {}", icon, cap.to_string().red(), desc);
+                    let (_, desc) = cap_description(&cap);
+                    println!("  {} — {}", cap.to_string().red(), desc);
                 }
             }
             println!();
@@ -258,12 +258,28 @@ fn output_classify(
         });
         println!("{}", serde_json::to_string(&output).unwrap());
     } else if !quiet {
+        println!("{} {}", "Command:".bold(), cmd);
         if caps.is_empty() {
-            println!("{}: {}", cmd.dimmed(), "clean".green());
+            println!("  {} No capabilities detected.", "CLEAN".green().bold());
         } else {
-            let cap_list: Vec<String> = sorted_caps(caps).iter().map(|c| c.to_string()).collect();
-            println!("{}: {}", cmd, cap_list.join(", ").red());
+            let sorted = sorted_caps(caps);
+            for cap in &sorted {
+                let (_, desc) = cap_description(cap);
+                let decision = default_policy(cap);
+                let policy_label = match decision {
+                    PolicyDecision::Allow => "allow".green(),
+                    PolicyDecision::Ask => "ask".yellow(),
+                    PolicyDecision::Deny => "deny".red(),
+                };
+                println!(
+                    "  {} — {} [{}]",
+                    cap.to_string().bold(),
+                    desc,
+                    policy_label
+                );
+            }
         }
+        println!();
     }
 }
 
