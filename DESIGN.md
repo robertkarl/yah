@@ -167,6 +167,28 @@ Flags: --json, --quiet, --context (override cwd/project-root), --color=auto/alwa
 
 tree-sitter-bash does not handle all bash syntax perfectly. Known gaps include some complex heredoc forms, certain brace expansion patterns, and edge cases in nested quoting. Any syntax that produces an ERROR node in the tree-sitter parse tree is treated as unparseable and emits ExecDynamic. This is the fail-closed invariant in action. As tree-sitter-bash improves, these cases automatically start classifying correctly.
 
+**SIGABRT on pathological input (found by cargo-fuzz, 2026-04-18):** tree-sitter-bash's external scanner hits an internal C assertion (`length <= 1024` in `ts_parser__external_scanner_serialize`, parser.c:408) on certain pathological inputs that blow up the scanner's serialized state. This causes SIGABRT which cannot be caught in Rust. The crash was found by `fuzz_classify_context` and is a tree-sitter-bash bug, not a yah bug. Artifact: `fuzz/artifacts/fuzz_classify_context/crash-c059489ba03ce9cfb5387bda76d75922ac9dc017`. Should be reported upstream.
+
+Root cause analysis (tree-sitter-bash 0.23.3, tree-sitter 0.24.7):
+
+The `serialize` function in `tree-sitter-bash/src/scanner.c` writes the scanner's heredoc state into a 1024-byte buffer (`lexer.debug_buffer`, sized by `TREE_SITTER_SERIALIZATION_BUFFER_SIZE`). It has a per-heredoc bounds check on line 103:
+
+    if (heredoc->delimiter.size + 3 + size >= TREE_SITTER_SERIALIZATION_BUFFER_SIZE)
+
+But each heredoc actually writes `3 + sizeof(uint32_t) + delimiter.size` = `7 + delimiter.size` bytes. The check only accounts for `3 + delimiter.size`, underestimating by 4 bytes per heredoc (the `uint32_t` storing the delimiter length on line 111). This means:
+
+1. The check passes when it shouldn't — it thinks there's room but there isn't.
+2. The actual writes go past the 1024-byte buffer (a C buffer overflow into `lexer.debug_buffer`).
+3. After the loop, `serialize` returns `size` > 1024, and the runtime assertion `ts_assert(length <= TREE_SITTER_SERIALIZATION_BUFFER_SIZE)` in `parser.c:408` fires, causing SIGABRT.
+
+The crash input does contain `<<` sequences (e.g., `<VZ<<<<<~.<<<~$-`). The heredoc arrow parsing at scanner.c:589-609 pushes a new `Heredoc` onto `scanner->heredocs` for each `<<` it finds. The long runs of characters (like `iiiii...`) between `<<` sequences get consumed as heredoc delimiters by `advance_word`. So the heredocs have real (large) delimiters, and only a handful of heredocs with moderate-sized delimiters are needed to exceed the buffer with the 4-byte-per-heredoc underestimate.
+
+**Fixed upstream:** tree-sitter/tree-sitter-bash commit `8509e32` (2025-06-02, Max Brunsfeld, "Fix out of bounds write during scanner serialization"). One-line fix: `+ 3` → `+ 3 + sizeof(uint32_t)`. Landed in tree-sitter-bash v0.25.0.
+
+**Version dependency chain:** tree-sitter-bash 0.25.x requires tree-sitter 0.25.x (via `tree-sitter-language = "0.1"` ABI). We were pinned to tree-sitter 0.24.7 + tree-sitter-bash 0.23.3 because 0.24.x introduced a new C API and the two crates had to match ABI. Bumping to tree-sitter 0.25.10 + tree-sitter-bash 0.25.1 compiles clean, passes all tests, and fixes this crash. Done 2026-04-18.
+
+**Reproducer:** `yah-core/tests/repro_crash.rs` — a Rust test using the exact command and context from the fuzz artifact. Crashes on 0.23.3, passes on 0.25.1.
+
 ### Test Corpus
 
 50+ curated TOML fixture files at v0, growing to 200+ by v0.2, in yah-core/tests/fixtures/:

@@ -6,10 +6,10 @@ license = "MIT"
 description = "Shell AST capability classifier — core library"
 
 [dependencies]
-# Pin versions explicitly — tree-sitter 0.24.x uses the new C API; tree-sitter-bash
-# must be a compatible version compiled against the same ABI.
-tree-sitter = "0.24"
-tree-sitter-bash = "0.23"
+# tree-sitter-bash 0.25+ fixes a scanner serialize overflow (scanner.c line 103).
+# tree-sitter-bash 0.25.x requires tree-sitter 0.25+ via tree-sitter-language 0.1 ABI.
+tree-sitter = "0.25"
+tree-sitter-bash = "0.25"
 serde = { version = "1", features = ["derive"] }
 
 [dev-dependencies]
