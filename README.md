@@ -1,6 +1,10 @@
 # yah
 
+yah in action:
+
 ![yah blocking a force push](earning%20your%20keep.png)
+
+In the above screenshot, Claude has full 'Bash' permissions, but yah blocked Claude from force pushing.
 
 yah helps block agents from running many types of destructive commands, while giving generous permissions.
 
