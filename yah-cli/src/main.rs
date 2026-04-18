@@ -295,20 +295,84 @@ fn handle_hook(ctx: &Context, classifier: &mut Classifier) {
         std::process::exit(0);
     }
 
-    // Capabilities detected — output hook response asking the user
+    // Apply default policy: capability -> allow / ask / deny
+    let decision = evaluate_policy(&caps);
     let cap_list: Vec<String> = sorted_caps(&caps).iter().map(|c| c.to_string()).collect();
     let reason = format!("yah: {}", cap_list.join(", "));
 
-    let response = serde_json::json!({
-        "hookSpecificOutput": {
-            "hookEventName": "PreToolUse",
-            "permissionDecision": "ask",
-            "permissionDecisionReason": reason,
+    match decision {
+        PolicyDecision::Allow => {
+            // All capabilities are in the allow set — pass silently
+            std::process::exit(0);
         }
-    });
+        PolicyDecision::Ask => {
+            let response = serde_json::json!({
+                "hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "permissionDecision": "ask",
+                    "permissionDecisionReason": reason,
+                }
+            });
+            println!("{}", serde_json::to_string(&response).unwrap());
+            std::process::exit(0);
+        }
+        PolicyDecision::Deny => {
+            let response = serde_json::json!({
+                "hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "permissionDecision": "deny",
+                    "permissionDecisionReason": reason,
+                }
+            });
+            println!("{}", serde_json::to_string(&response).unwrap());
+            std::process::exit(0);
+        }
+    }
+}
 
-    println!("{}", serde_json::to_string(&response).unwrap());
-    std::process::exit(0);
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum PolicyDecision {
+    Allow,
+    Ask,
+    Deny,
+}
+
+/// Default policy mapping capabilities to allow/ask/deny.
+///
+/// deny > ask > allow — the most restrictive decision wins.
+fn evaluate_policy(caps: &std::collections::HashSet<Capability>) -> PolicyDecision {
+    let mut worst = PolicyDecision::Allow;
+
+    for cap in caps {
+        let decision = default_policy(cap);
+        if decision > worst {
+            worst = decision;
+        }
+    }
+
+    worst
+}
+
+/// Default per-capability policy.
+fn default_policy(cap: &Capability) -> PolicyDecision {
+    match cap {
+        // Allow: normal dev work
+        Capability::WriteInsideRepo => PolicyDecision::Allow,
+        Capability::DeleteInsideRepo => PolicyDecision::Allow,
+        Capability::NetEgress => PolicyDecision::Allow,
+
+        // Deny: never allow without manual intervention
+        Capability::HistoryRewrite => PolicyDecision::Deny,
+
+        // Ask: everything else
+        Capability::NetIngress => PolicyDecision::Ask,
+        Capability::WriteOutsideRepo => PolicyDecision::Ask,
+        Capability::DeleteOutsideRepo => PolicyDecision::Ask,
+        Capability::ReadSecretPath => PolicyDecision::Ask,
+        Capability::ExecDynamic => PolicyDecision::Ask,
+        Capability::ProcessSignal => PolicyDecision::Ask,
+        Capability::PrivilegeEscalation => PolicyDecision::Ask,
+    }
 }
 
 /// Handle `yah install` — write hook config to ~/.claude/settings.json.

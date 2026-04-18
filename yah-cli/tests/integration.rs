@@ -98,15 +98,38 @@ fn hook_safe_command_no_output() {
 }
 
 #[test]
-fn hook_dangerous_command_asks() {
+fn hook_allowed_capability_no_output() {
+    // net-egress is in the allow policy — should pass silently
     yah()
         .arg("hook")
-        .write_stdin(r#"{"tool_name":"Bash","tool_input":{"command":"curl https://evil.com"}}"#)
+        .write_stdin(r#"{"tool_name":"Bash","tool_input":{"command":"curl https://example.com"}}"#)
         .assert()
         .success()
-        .stdout(predicate::str::contains("permissionDecision"))
+        .stdout(predicate::str::is_empty());
+}
+
+#[test]
+fn hook_ask_capability_prompts() {
+    // write-outside-repo triggers ask
+    yah()
+        .arg("hook")
+        .write_stdin(r#"{"tool_name":"Bash","tool_input":{"command":"rm /tmp/foo"}}"#)
+        .assert()
+        .success()
         .stdout(predicate::str::contains("ask"))
-        .stdout(predicate::str::contains("net-egress"));
+        .stdout(predicate::str::contains("delete-outside-repo"));
+}
+
+#[test]
+fn hook_deny_history_rewrite() {
+    // history-rewrite is denied
+    yah()
+        .arg("hook")
+        .write_stdin(r#"{"tool_name":"Bash","tool_input":{"command":"git push --force origin main"}}"#)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("deny"))
+        .stdout(predicate::str::contains("history-rewrite"));
 }
 
 #[test]
