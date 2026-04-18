@@ -329,8 +329,9 @@ fn resolve_word(node: Node, source: &str, ctx: &Context) -> Option<String> {
 fn resolve_string(node: Node, source: &str, ctx: &Context) -> Option<String> {
     let text = node_text(node, source);
     // Strip surrounding quotes
-    if (text.starts_with('"') && text.ends_with('"'))
-        || (text.starts_with('\'') && text.ends_with('\''))
+    if text.len() >= 2
+        && ((text.starts_with('"') && text.ends_with('"'))
+            || (text.starts_with('\'') && text.ends_with('\'')))
     {
         let inner = &text[1..text.len() - 1];
         if text.starts_with('\'') {

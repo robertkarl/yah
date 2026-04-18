@@ -1,1 +1,4 @@
 /target
+yah-core/fuzz/artifacts/
+yah-core/fuzz/corpus/
+yah-core/fuzz/target/
