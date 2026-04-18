@@ -1,0 +1,8 @@
+command = "echo data >> /var/log/app.log"
+capabilities = ["write-outside-repo"]
+notes = "Append redirect outside repo"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

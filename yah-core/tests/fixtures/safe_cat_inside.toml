@@ -1,0 +1,8 @@
+command = "cat src/main.rs"
+capabilities = []
+notes = "cat of a file inside the repo — no sensitive path"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

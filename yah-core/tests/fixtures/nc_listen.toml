@@ -1,0 +1,8 @@
+command = "nc -l 8080"
+capabilities = ["net-egress", "net-ingress"]
+notes = "netcat listen mode — both egress (nc is in the list) and ingress"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

@@ -1,0 +1,8 @@
+command = "git reset --hard HEAD~1"
+capabilities = ["history-rewrite"]
+notes = "git reset --hard — history rewrite"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

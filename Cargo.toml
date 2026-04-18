@@ -1,0 +1,3 @@
+[workspace]
+members = ["yah-core", "yah-cli"]
+resolver = "2"

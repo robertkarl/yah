@@ -1,0 +1,8 @@
+command = "echo hello; rm /etc/passwd"
+capabilities = ["delete-outside-repo"]
+notes = "Semicolon-separated — union"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

@@ -1,0 +1,8 @@
+command = "sudo rm /var/log/syslog"
+capabilities = ["privilege-escalation", "delete-outside-repo"]
+notes = "sudo rm — priv escalation + delete outside repo"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

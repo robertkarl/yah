@@ -1,0 +1,8 @@
+command = "git filter-branch --tree-filter 'rm -f passwords.txt' HEAD"
+capabilities = ["history-rewrite"]
+notes = "git filter-branch — history rewrite"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

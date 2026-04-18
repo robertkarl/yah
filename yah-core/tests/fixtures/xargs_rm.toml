@@ -1,0 +1,8 @@
+command = "find /tmp -name '*.tmp' | xargs rm"
+capabilities = ["delete-inside-repo", "delete-outside-repo"]
+notes = "xargs rm — can't determine paths, emit both"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

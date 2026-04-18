@@ -1,0 +1,8 @@
+command = "pkill nginx"
+capabilities = ["process-signal"]
+notes = "pkill — process signal"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

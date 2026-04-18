@@ -1,0 +1,8 @@
+command = "echo hello world"
+capabilities = []
+notes = "echo with arguments — no capabilities"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

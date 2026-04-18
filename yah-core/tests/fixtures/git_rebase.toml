@@ -1,0 +1,8 @@
+command = "git rebase main"
+capabilities = ["history-rewrite"]
+notes = "git rebase — history rewrite"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

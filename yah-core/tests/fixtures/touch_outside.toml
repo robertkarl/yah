@@ -1,0 +1,8 @@
+command = "touch /tmp/marker"
+capabilities = ["write-outside-repo"]
+notes = "touch outside repo"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

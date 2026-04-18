@@ -1,0 +1,8 @@
+command = "npm install"
+capabilities = []
+notes = "npm install — no capabilities (network is implicit but not a shell-level capability)"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

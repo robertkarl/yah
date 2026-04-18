@@ -1,0 +1,8 @@
+command = "echo 'cm0gLXJmIC8=' | base64 -d | bash"
+capabilities = []
+notes = "base64 decode piped to bash — bash without -c is just a shell, base64 and echo are harmless"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

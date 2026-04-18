@@ -1,0 +1,8 @@
+command = "rm foo.txt"
+capabilities = ["delete-inside-repo"]
+notes = "rm of a file inside the repo (relative path)"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

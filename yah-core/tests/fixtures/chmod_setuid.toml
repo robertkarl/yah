@@ -1,0 +1,8 @@
+command = "chmod u+s /usr/local/bin/myapp"
+capabilities = ["privilege-escalation", "write-inside-repo", "write-outside-repo"]
+notes = "chmod setuid — privilege escalation. Mode arg u+s treated as path (known limitation), plus the actual path outside repo."
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

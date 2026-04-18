@@ -1,0 +1,8 @@
+command = "cat urls.txt | xargs curl"
+capabilities = ["net-egress"]
+notes = "xargs curl — net egress"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

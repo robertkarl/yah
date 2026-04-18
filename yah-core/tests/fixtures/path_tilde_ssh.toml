@@ -1,0 +1,8 @@
+command = "cat ~/../../etc/shadow"
+capabilities = []
+notes = "Path with ~ and .. escaping out — /etc/shadow is not on the sensitive paths list, so no capability. The path resolves to /etc/shadow which isn't a known secret file."
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

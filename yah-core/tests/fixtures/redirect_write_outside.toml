@@ -1,0 +1,8 @@
+command = "echo hello > /tmp/out.txt"
+capabilities = ["write-outside-repo"]
+notes = "Write redirect to file outside repo"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

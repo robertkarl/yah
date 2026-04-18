@@ -1,0 +1,8 @@
+command = "mv important.txt /tmp/"
+capabilities = ["write-outside-repo"]
+notes = "mv file to outside repo"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

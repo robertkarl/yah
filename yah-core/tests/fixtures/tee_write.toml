@@ -1,0 +1,8 @@
+command = "echo hello | tee /tmp/output.txt"
+capabilities = ["write-outside-repo"]
+notes = "tee writes to file outside repo"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

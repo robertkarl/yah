@@ -1,0 +1,8 @@
+command = "source ~/.bashrc"
+capabilities = ["exec-dynamic"]
+notes = "source — exec dynamic"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

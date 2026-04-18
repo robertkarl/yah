@@ -1,0 +1,8 @@
+command = "rm ../../etc/passwd"
+capabilities = ["delete-outside-repo"]
+notes = "Path escape via .. — resolves outside repo"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

@@ -1,0 +1,8 @@
+command = "python3 -m http.server"
+capabilities = ["net-ingress"]
+notes = "Python HTTP server — net ingress"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

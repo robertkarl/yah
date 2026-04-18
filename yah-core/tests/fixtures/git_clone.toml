@@ -1,0 +1,8 @@
+command = "git clone https://github.com/user/repo"
+capabilities = ["net-egress"]
+notes = "git clone — net egress"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

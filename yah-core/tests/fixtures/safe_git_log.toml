@@ -1,0 +1,8 @@
+command = "git log --oneline -10"
+capabilities = []
+notes = "git log — read-only, no capabilities"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

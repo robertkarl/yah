@@ -1,0 +1,8 @@
+command = "touch newfile.txt"
+capabilities = ["write-inside-repo"]
+notes = "touch inside repo"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

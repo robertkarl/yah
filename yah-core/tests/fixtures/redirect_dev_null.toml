@@ -1,0 +1,8 @@
+command = "echo hello > /dev/null"
+capabilities = []
+notes = "Redirect to /dev/null — ignored"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

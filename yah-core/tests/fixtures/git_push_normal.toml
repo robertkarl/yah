@@ -1,0 +1,8 @@
+command = "git push origin main"
+capabilities = ["net-egress"]
+notes = "Normal git push — net egress only, no history rewrite"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

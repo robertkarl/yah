@@ -1,0 +1,8 @@
+command = "rm /tmp/scratch.txt"
+capabilities = ["delete-outside-repo"]
+notes = "rm of a file outside the repo"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

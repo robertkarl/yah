@@ -1,0 +1,8 @@
+command = "echo hello > ./output.txt"
+capabilities = ["write-inside-repo"]
+notes = "Write redirect to file inside repo"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

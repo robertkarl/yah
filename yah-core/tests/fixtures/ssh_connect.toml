@@ -1,0 +1,8 @@
+command = "ssh user@example.com"
+capabilities = ["net-egress"]
+notes = "SSH connection — net egress"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

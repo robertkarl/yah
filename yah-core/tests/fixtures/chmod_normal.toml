@@ -1,0 +1,8 @@
+command = "chmod +x script.sh"
+capabilities = ["write-inside-repo"]
+notes = "chmod +x inside repo — just a write"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

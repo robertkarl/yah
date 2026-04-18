@@ -1,0 +1,8 @@
+command = "scp file.txt user@host:/remote/path"
+capabilities = ["net-egress"]
+notes = "scp upload — net egress"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

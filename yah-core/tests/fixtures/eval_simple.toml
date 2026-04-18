@@ -1,0 +1,8 @@
+command = "eval 'echo hello'"
+capabilities = ["exec-dynamic"]
+notes = "eval — exec dynamic"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

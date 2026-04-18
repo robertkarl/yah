@@ -1,0 +1,8 @@
+command = "kill -9 1234"
+capabilities = ["process-signal"]
+notes = "kill with signal — process signal"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

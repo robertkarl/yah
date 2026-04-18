@@ -1,0 +1,8 @@
+command = "git clean -fd"
+capabilities = ["delete-inside-repo"]
+notes = "git clean -fd — deletes untracked files inside repo"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

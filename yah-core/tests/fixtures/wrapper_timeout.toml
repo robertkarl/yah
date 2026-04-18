@@ -1,0 +1,8 @@
+command = "timeout 30 curl https://example.com"
+capabilities = ["net-egress"]
+notes = "timeout wrapper stripped, inner curl classified"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

@@ -1,0 +1,8 @@
+command = "dd if=/dev/zero of=/dev/sda bs=1M"
+capabilities = ["write-outside-repo"]
+notes = "dd writing to device — write outside repo"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

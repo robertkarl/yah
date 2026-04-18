@@ -1,0 +1,8 @@
+command = "nice -n 10 wget https://example.com/big.tar.gz"
+capabilities = ["net-egress"]
+notes = "nice wrapper stripped, inner wget classified"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

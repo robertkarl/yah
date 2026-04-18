@@ -1,0 +1,8 @@
+command = "ls"
+capabilities = []
+notes = "Simple ls — no capabilities"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

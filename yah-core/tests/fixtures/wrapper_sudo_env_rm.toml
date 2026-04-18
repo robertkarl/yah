@@ -1,0 +1,8 @@
+command = "sudo env PATH=/usr/bin rm /tmp/file"
+capabilities = ["privilege-escalation", "delete-outside-repo"]
+notes = "sudo + env wrapper chain, inner rm classified"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

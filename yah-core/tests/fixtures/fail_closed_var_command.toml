@@ -1,0 +1,8 @@
+command = "$CMD arg1 arg2"
+capabilities = ["exec-dynamic"]
+notes = "Variable in command position — fail closed"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

@@ -1,0 +1,8 @@
+command = "nohup python3 -m http.server &"
+capabilities = ["net-ingress"]
+notes = "nohup wrapper stripped, inner python http.server classified"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

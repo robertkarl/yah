@@ -1,0 +1,8 @@
+command = "cp src/main.rs src/main.rs.bak"
+capabilities = ["write-inside-repo"]
+notes = "cp inside repo"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

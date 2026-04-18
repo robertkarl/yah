@@ -1,0 +1,8 @@
+command = "python3 -c 'import os; os.system(\"rm -rf /\")'"
+capabilities = ["exec-dynamic"]
+notes = "python -c — exec dynamic"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

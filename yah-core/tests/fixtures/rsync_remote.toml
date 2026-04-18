@@ -1,0 +1,8 @@
+command = "rsync -avz . user@host:/remote/backup"
+capabilities = ["net-egress"]
+notes = "rsync to remote — net egress"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

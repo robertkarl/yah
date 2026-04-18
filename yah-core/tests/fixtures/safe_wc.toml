@@ -1,0 +1,8 @@
+command = "wc -l src/main.rs"
+capabilities = []
+notes = "wc — read-only, no sensitive path"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

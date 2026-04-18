@@ -1,0 +1,8 @@
+command = "cat ~/.ssh/id_rsa"
+capabilities = ["read-secret-path"]
+notes = "Reading SSH private key"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

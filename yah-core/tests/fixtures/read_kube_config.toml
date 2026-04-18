@@ -1,0 +1,8 @@
+command = "cat ~/.kube/config"
+capabilities = ["read-secret-path"]
+notes = "Reading kube config — sensitive"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

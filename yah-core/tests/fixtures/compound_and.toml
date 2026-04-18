@@ -1,0 +1,8 @@
+command = "curl https://example.com && rm /tmp/file"
+capabilities = ["net-egress", "delete-outside-repo"]
+notes = "Compound && — union of capabilities"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

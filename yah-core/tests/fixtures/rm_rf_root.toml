@@ -1,0 +1,8 @@
+command = "rm -rf /"
+capabilities = ["delete-outside-repo"]
+notes = "rm -rf / — catastrophic delete outside repo"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

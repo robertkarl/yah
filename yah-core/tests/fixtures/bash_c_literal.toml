@@ -1,0 +1,8 @@
+command = "bash -c 'echo hello'"
+capabilities = ["exec-dynamic"]
+notes = "bash -c — exec dynamic (even with literal string)"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

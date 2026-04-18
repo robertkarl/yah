@@ -1,0 +1,8 @@
+command = "ruby -e 'puts `whoami`'"
+capabilities = ["exec-dynamic"]
+notes = "ruby -e — exec dynamic"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

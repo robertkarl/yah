@@ -1,0 +1,8 @@
+command = "git push --force origin main"
+capabilities = ["history-rewrite", "net-egress"]
+notes = "git force push — history rewrite + net egress"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"
