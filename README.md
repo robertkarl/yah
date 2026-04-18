@@ -1,5 +1,7 @@
 # yah
 
+![yah blocking a force push](earning%20your%20keep.png)
+
 yah helps block agents from running many types of destructive commands, while giving generous permissions.
 
 - do you want to give broad permissions like 'Bash' to Claude?
