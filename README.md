@@ -1,21 +1,8 @@
 # yah
 
-Shell AST capability classifier. Parses shell commands with tree-sitter-bash and classifies what capabilities they require — network access, file writes, privilege escalation, etc.
+The opposite of [nah](https://github.com/stefanheule/nah). Instead of saying no to everything and making you click through prompts, yah says yes. Give your agent broad permissions and let yah catch the things that would actually ruin your day: force pushes, secret exfiltration, writes outside your repo.
 
-Built for gating agent tool calls. Drop it into a Claude Code hook and it tells you what a command will do before it runs.
-
-## Install
-
-```sh
-cargo install --path yah-cli
-```
-
-Or build from source:
-
-```sh
-cargo build --release
-# binary at ./target/release/yah
-```
+yah parses shell commands with tree-sitter-bash and classifies what capabilities they require (network access, file writes, privilege escalation, etc.). It runs as a Claude Code hook, silently allowing normal dev work and only stepping in when something looks genuinely dangerous. The goal is to stay out of your way 99% of the time so you can stop babysitting permission prompts and let the agent work.
 
 ## Usage
 
@@ -93,6 +80,20 @@ Install into Claude Code settings:
 $ yah install
 # writes hook config to ~/.claude/settings.json
 ```
+
+## Install
+
+```sh
+cargo install --path yah-cli
+```
+
+Or build from source:
+
+```sh
+cargo build --release
+# binary at ./target/release/yah
+```
+
 
 ## Capabilities
 
