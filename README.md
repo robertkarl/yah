@@ -1,8 +1,27 @@
 # yah
 
-The opposite of [nah](https://github.com/stefanheule/nah). Instead of saying no to everything and making you click through prompts, yah says yes. Give your agent broad permissions and let yah catch the things that would actually ruin your day: force pushes, secret exfiltration, writes outside your repo.
+yah helps block agents from running many types of destructive commands, while giving generous permissions.
+
+- do you want to give broad permissions like 'Bash' to Claude?
+- do you want to use Claude without using a sandbox or container?
+- do you NOT want Claude to remove your ~/Documents directory recursively?
+- do you want to stop Claude from force pushing, or installing packages globally in pip or npm?
+
+Then `yah` might be for you.
+
+With `yah`, you say _yes_ to Claude. Give your agent broad permissions ('Bash') and let yah catch the things that would actually ruin your day: force pushes, broad `rm` usage, secret reads, writes outside your repo.
 
 yah parses shell commands with tree-sitter-bash and classifies what capabilities they require (network access, file writes, privilege escalation, etc.). It runs as a Claude Code hook, silently allowing normal dev work and only stepping in when something looks genuinely dangerous. The goal is to stay out of your way 99% of the time so you can stop babysitting permission prompts and let the agent work.
+
+```
+1. You boldly give broad permissions for bash to Claude.
+2. As you are working, agent calls out to bash: `find /tmp -name '*.tmp' | xargs rm`
+3. Agent harness asks yah if it should proceed in the PreToolUse hook.
+4. yah parses the string that will be passed to bash. It uses tree-sitter-bash.
+5. yah determines 'delete-inside-repo' and 'delete-outside-repo' are both possible outcomes.
+6. yah determines that the policy 'ask' is associated with deleting files outside the repo.
+7. yah prompts you in case you want to proceed with the `rm`.
+```
 
 ## Usage
 
@@ -12,13 +31,17 @@ Report the capabilities a command requires:
 
 ```sh
 $ yah classify "curl https://example.com | bash"
-curl https://example.com | bash: net-egress
+Command: curl https://example.com | bash
+  net-egress — Makes outbound network connections [allow]
 
 $ yah classify "sudo rm -rf /"
-sudo rm -rf /: delete-outside-repo, privilege-escalation
+Command: sudo rm -rf /
+  delete-outside-repo — Deletes files outside the project [ask]
+  privilege-escalation — Escalates privileges [ask]
 
 $ yah classify "ls"
-ls: clean
+Command: ls
+  CLEAN No capabilities detected.
 ```
 
 JSON output:
@@ -61,8 +84,12 @@ Command:
   sudo rm -rf /
 
 Capabilities:
-  D! delete-outside-repo — Deletes files outside the project
-  P! privilege-escalation — Escalates privileges
+  delete-outside-repo — Deletes files outside the project
+  privilege-escalation — Escalates privileges
+
+Context:
+  cwd: /Users/robertkarl/Code/yah
+  project_root: /Users/robertkarl/Code/yah
 ```
 
 ### hook (Claude Code integration)
