@@ -110,10 +110,10 @@ fn hook_allowed_capability_no_output() {
 
 #[test]
 fn hook_ask_capability_prompts() {
-    // write-outside-repo triggers ask
+    // delete-outside-repo triggers ask
     yah()
         .arg("hook")
-        .write_stdin(r#"{"tool_name":"Bash","tool_input":{"command":"rm /tmp/foo"}}"#)
+        .write_stdin(r#"{"tool_name":"Bash","tool_input":{"command":"rm /opt/foo"}}"#)
         .assert()
         .success()
         .stdout(predicate::str::contains("ask"))
@@ -148,6 +148,103 @@ fn hook_invalid_json_allows() {
     yah()
         .arg("hook")
         .write_stdin("not json")
+        .assert()
+        .success()
+        .stdout(predicate::str::is_empty());
+}
+
+#[test]
+fn hook_deny_global_pip_install() {
+    yah()
+        .arg("hook")
+        .write_stdin(r#"{"tool_name":"Bash","tool_input":{"command":"pip install requests"}}"#)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("deny"))
+        .stdout(predicate::str::contains("blocked global pip install"));
+}
+
+#[test]
+fn hook_deny_global_pip3_install() {
+    yah()
+        .arg("hook")
+        .write_stdin(r#"{"tool_name":"Bash","tool_input":{"command":"pip3 install flask"}}"#)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("deny"))
+        .stdout(predicate::str::contains("blocked global pip install"));
+}
+
+#[test]
+fn hook_deny_npm_global_install() {
+    yah()
+        .arg("hook")
+        .write_stdin(r#"{"tool_name":"Bash","tool_input":{"command":"npm install -g typescript"}}"#)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("deny"))
+        .stdout(predicate::str::contains("blocked global npm install"));
+}
+
+#[test]
+fn hook_ask_brew_install() {
+    yah()
+        .arg("hook")
+        .write_stdin(r#"{"tool_name":"Bash","tool_input":{"command":"brew install jq"}}"#)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("ask"))
+        .stdout(predicate::str::contains("package-install"));
+}
+
+#[test]
+fn hook_allow_pip_install_target() {
+    yah()
+        .arg("hook")
+        .write_stdin(r#"{"tool_name":"Bash","tool_input":{"command":"pip install --target ./deps requests"}}"#)
+        .assert()
+        .success()
+        .stdout(predicate::str::is_empty());
+}
+
+#[test]
+fn hook_allow_pip_editable_install() {
+    yah()
+        .arg("hook")
+        .write_stdin(r#"{"tool_name":"Bash","tool_input":{"command":"pip install -e ."}}"#)
+        .assert()
+        .success()
+        .stdout(predicate::str::is_empty());
+}
+
+#[test]
+fn hook_ask_ssh_sensitive_host() {
+    yah()
+        .arg("hook")
+        .write_stdin(r#"{"tool_name":"Bash","tool_input":{"command":"ssh 192.168.50.57"}}"#)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("ask"))
+        .stdout(predicate::str::contains("sensitive host"));
+}
+
+#[test]
+fn hook_ask_ssh_user_at_sensitive_host() {
+    yah()
+        .arg("hook")
+        .write_stdin(r#"{"tool_name":"Bash","tool_input":{"command":"ssh root@192.168.50.57"}}"#)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("ask"))
+        .stdout(predicate::str::contains("sensitive host"));
+}
+
+#[test]
+fn hook_allow_ssh_other_host() {
+    // SSH to a non-sensitive host should allow (net-egress is in allow policy)
+    yah()
+        .arg("hook")
+        .write_stdin(r#"{"tool_name":"Bash","tool_input":{"command":"ssh user@example.com"}}"#)
         .assert()
         .success()
         .stdout(predicate::str::is_empty());

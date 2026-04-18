@@ -225,9 +225,25 @@ fn filename_starts_with(filename: &str, prefix: &str) -> bool {
     }
 }
 
-/// Check if a path is /dev/null — writes to /dev/null are ignored.
+/// Check if a path is in a scratch directory (/tmp, /var/tmp, $TMPDIR).
+/// Writes and deletes here are treated like inside-repo (allowed by default).
+pub fn is_scratch_path(path: &PathBuf) -> bool {
+    let path_str = path.to_str().unwrap_or("");
+    path_str.starts_with("/tmp/")
+        || path_str == "/tmp"
+        || path_str.starts_with("/var/tmp/")
+        || path_str == "/var/tmp"
+        || path_str.starts_with("/private/tmp/")
+        || path_str == "/private/tmp"
+}
+
+/// Check if a path is a safe /dev device — reads/writes to these are ignored.
+/// Only true sinks/sources with no side effects.
 pub fn is_dev_null(path: &PathBuf) -> bool {
-    path.to_str() == Some("/dev/null")
+    matches!(
+        path.to_str(),
+        Some("/dev/null") | Some("/dev/zero") | Some("/dev/urandom") | Some("/dev/random")
+    )
 }
 
 #[cfg(test)]

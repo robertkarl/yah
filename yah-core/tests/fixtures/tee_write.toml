@@ -1,4 +1,4 @@
-command = "echo hello | tee /tmp/output.txt"
+command = "echo hello | tee /opt/output.txt"
 capabilities = ["write-outside-repo"]
 notes = "tee writes to file outside repo"
 

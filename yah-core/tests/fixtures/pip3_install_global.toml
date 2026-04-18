@@ -1,0 +1,8 @@
+command = "pip3 install flask gunicorn"
+capabilities = ["package-install"]
+notes = "Global pip3 install with multiple packages"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

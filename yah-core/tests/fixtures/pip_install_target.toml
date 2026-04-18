@@ -1,0 +1,8 @@
+command = "pip install --target ./deps requests"
+capabilities = []
+notes = "pip install with --target to local dir is safe"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

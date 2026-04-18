@@ -1,0 +1,8 @@
+command = "brew install jq"
+capabilities = ["package-install"]
+notes = "brew install a package"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

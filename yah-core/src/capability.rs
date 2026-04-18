@@ -15,6 +15,7 @@ pub enum Capability {
     ExecDynamic,
     ProcessSignal,
     PrivilegeEscalation,
+    PackageInstall,
 }
 
 impl fmt::Display for Capability {
@@ -31,6 +32,7 @@ impl fmt::Display for Capability {
             Capability::ExecDynamic => "exec-dynamic",
             Capability::ProcessSignal => "process-signal",
             Capability::PrivilegeEscalation => "privilege-escalation",
+            Capability::PackageInstall => "package-install",
         };
         write!(f, "{}", s)
     }
@@ -50,6 +52,7 @@ impl Capability {
             "exec-dynamic" => Some(Capability::ExecDynamic),
             "process-signal" => Some(Capability::ProcessSignal),
             "privilege-escalation" => Some(Capability::PrivilegeEscalation),
+            "package-install" => Some(Capability::PackageInstall),
             _ => None,
         }
     }

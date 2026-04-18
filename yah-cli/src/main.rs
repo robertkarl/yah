@@ -15,7 +15,7 @@ Examples:
   yah classify \"curl example.com\"
   yah check \"ls\"
   yah explain \"sudo rm -rf /\"
-  yah install   # install as Claude Code hook
+  yah install-hook   # install as Claude Code hook
 
 Recommended Claude Code setup:
   Don't run with --dangerously-ignore-permissions. Instead, add these
@@ -35,10 +35,15 @@ Default policy (capability -> decision):
   deny:   history-rewrite
   ask:    everything else (write-outside-repo, delete-outside-repo,
           read-secret-path, exec-dynamic, privilege-escalation,
-          net-ingress, process-signal)
+          net-ingress, process-signal, package-install)
 
-To change the defaults, edit the default_policy() function in
-yah-cli/src/main.rs and rebuild with `cargo install --path yah-cli`."
+Command-specific overrides:
+  deny:   pip/pip3 install (global), npm/yarn/pnpm install -g
+  ask:    ssh/scp/sftp to sensitive hosts (192.168.50.57)
+
+To change the defaults, edit default_policy() and
+command_policy_override() in yah-cli/src/main.rs and rebuild
+with `cargo install --path yah-cli`."
 )]
 struct Cli {
     #[command(subcommand)]
@@ -92,9 +97,9 @@ enum Commands {
     /// Run as a Claude Code PreToolUse hook (reads hook JSON from stdin)
     Hook,
     /// Install yah as a Claude Code PreToolUse hook
-    Install,
+    InstallHook,
     /// Remove yah from Claude Code hooks
-    Uninstall,
+    UninstallHook,
 }
 
 fn main() {
@@ -185,11 +190,11 @@ fn main() {
             handle_hook(&ctx, &mut classifier);
         }
 
-        Commands::Install => {
+        Commands::InstallHook => {
             handle_install();
         }
 
-        Commands::Uninstall => {
+        Commands::UninstallHook => {
             handle_uninstall();
         }
     }
@@ -302,6 +307,7 @@ fn cap_description(cap: &Capability) -> (&'static str, &'static str) {
         Capability::ExecDynamic => ("X?", "Executes dynamically constructed commands"),
         Capability::ProcessSignal => ("K!", "Sends signals to processes"),
         Capability::PrivilegeEscalation => ("P!", "Escalates privileges"),
+        Capability::PackageInstall => ("Pk", "Installs system/global packages"),
     }
 }
 
@@ -338,6 +344,37 @@ fn handle_hook(ctx: &Context, classifier: &mut Classifier) {
     };
 
     let caps = classifier.classify(command, ctx);
+
+    // Command-specific policy overrides (checked before capability-based policy)
+    if let Some(override_decision) = command_policy_override(command) {
+        match override_decision {
+            (PolicyDecision::Allow, _) => {
+                std::process::exit(0);
+            }
+            (PolicyDecision::Ask, reason) => {
+                let response = serde_json::json!({
+                    "hookSpecificOutput": {
+                        "hookEventName": "PreToolUse",
+                        "permissionDecision": "ask",
+                        "permissionDecisionReason": reason,
+                    }
+                });
+                println!("{}", serde_json::to_string(&response).unwrap());
+                std::process::exit(0);
+            }
+            (PolicyDecision::Deny, reason) => {
+                let response = serde_json::json!({
+                    "hookSpecificOutput": {
+                        "hookEventName": "PreToolUse",
+                        "permissionDecision": "deny",
+                        "permissionDecisionReason": reason,
+                    }
+                });
+                println!("{}", serde_json::to_string(&response).unwrap());
+                std::process::exit(0);
+            }
+        }
+    }
 
     if caps.is_empty() {
         // Clean command — allow silently
@@ -437,6 +474,76 @@ fn evaluate_policy(caps: &std::collections::HashSet<Capability>) -> PolicyDecisi
     worst
 }
 
+/// Command-specific policy overrides.
+/// Returns Some((decision, reason)) if the command matches a specific rule.
+/// These are checked before capability-based policy and take precedence.
+fn command_policy_override(command: &str) -> Option<(PolicyDecision, String)> {
+    let parts: Vec<&str> = command.split_whitespace().collect();
+    if parts.is_empty() {
+        return None;
+    }
+
+    let basename = parts[0].rsplit('/').next().unwrap_or(parts[0]);
+
+    // Deny global pip/npm installs — these write outside the project
+    // and Claude tries them constantly
+    if matches!(basename, "pip" | "pip3") && parts.iter().any(|&p| p == "install") {
+        let has_target = parts.windows(2).any(|w| w[0] == "--target" || w[0] == "-t");
+        let has_editable_dot =
+            parts.windows(2).any(|w| (w[0] == "-e" || w[0] == "--editable") && w[1] == ".");
+        if !has_target && !has_editable_dot {
+            return Some((
+                PolicyDecision::Deny,
+                "yah blocked global pip install. Use a virtualenv, \
+                 or `pip install --target ./local_deps` instead."
+                    .to_string(),
+            ));
+        }
+    }
+    if matches!(basename, "npm" | "npx" | "yarn" | "pnpm" | "bun")
+        && parts.iter().any(|&p| p == "-g" || p == "--global")
+    {
+        return Some((
+            PolicyDecision::Deny,
+            "yah blocked global npm install. Install locally \
+             with `npm install <pkg>` (no -g) instead."
+                .to_string(),
+        ));
+    }
+
+    // Ask before SSH/SCP to sensitive hosts
+    const SENSITIVE_HOSTS: &[&str] = &["192.168.50.57"];
+
+    if matches!(basename, "ssh" | "scp" | "sftp") {
+        for part in &parts[1..] {
+            // Skip flags
+            if part.starts_with('-') {
+                continue;
+            }
+            // Check for user@host or bare host, with optional :port
+            let host_part = if let Some((_user, rest)) = part.split_once('@') {
+                rest
+            } else {
+                part
+            };
+            // Strip :port or trailing path (scp uses host:path)
+            let host = host_part.split(':').next().unwrap_or(host_part);
+            if SENSITIVE_HOSTS.contains(&host) {
+                return Some((
+                    PolicyDecision::Ask,
+                    format!(
+                        "yah detected SSH/SCP to sensitive host {}. \
+                         This host is in your protected hosts list.",
+                        host
+                    ),
+                ));
+            }
+        }
+    }
+
+    None
+}
+
 /// Default per-capability policy.
 fn default_policy(cap: &Capability) -> PolicyDecision {
     match cap {
@@ -456,6 +563,7 @@ fn default_policy(cap: &Capability) -> PolicyDecision {
         Capability::ExecDynamic => PolicyDecision::Ask,
         Capability::ProcessSignal => PolicyDecision::Ask,
         Capability::PrivilegeEscalation => PolicyDecision::Ask,
+        Capability::PackageInstall => PolicyDecision::Ask,
     }
 }
 
@@ -538,7 +646,7 @@ fn handle_install() {
     println!("  Bash commands will be classified before execution.");
     println!("  Commands with capabilities will prompt for confirmation.");
     println!();
-    println!("  Run {} to remove.", "yah uninstall".bold());
+    println!("  Run {} to remove.", "yah uninstall-hook".bold());
 }
 
 /// Handle `yah uninstall` — remove yah hook from ~/.claude/settings.json.

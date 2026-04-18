@@ -1,4 +1,4 @@
-command = "touch /tmp/marker"
+command = "touch /opt/marker"
 capabilities = ["write-outside-repo"]
 notes = "touch outside repo"
 

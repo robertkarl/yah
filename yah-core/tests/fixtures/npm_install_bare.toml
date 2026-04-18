@@ -1,0 +1,8 @@
+command = "npm install"
+capabilities = []
+notes = "npm install with no args restores from lockfile — safe"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

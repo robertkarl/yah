@@ -152,7 +152,7 @@ mod tests {
     #[test]
     fn sudo_rm() {
         let mut c = Classifier::new();
-        let caps = c.classify("sudo rm /tmp/file", &test_ctx());
+        let caps = c.classify("sudo rm /opt/file", &test_ctx());
         assert!(caps.contains(&Capability::PrivilegeEscalation));
         assert!(caps.contains(&Capability::DeleteOutsideRepo));
     }
@@ -196,7 +196,7 @@ mod tests {
     #[test]
     fn write_redirect_outside() {
         let mut c = Classifier::new();
-        let caps = c.classify("echo hello > /tmp/out.txt", &test_ctx());
+        let caps = c.classify("echo hello > /opt/out.txt", &test_ctx());
         assert!(caps.contains(&Capability::WriteOutsideRepo));
     }
 
@@ -217,7 +217,7 @@ mod tests {
     #[test]
     fn compound_and() {
         let mut c = Classifier::new();
-        let caps = c.classify("curl https://example.com && rm /tmp/file", &test_ctx());
+        let caps = c.classify("curl https://example.com && rm /opt/file", &test_ctx());
         assert!(caps.contains(&Capability::NetEgress));
         assert!(caps.contains(&Capability::DeleteOutsideRepo));
     }

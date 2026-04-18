@@ -1,0 +1,8 @@
+command = "pip install -e ."
+capabilities = []
+notes = "Editable install of current project is safe"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

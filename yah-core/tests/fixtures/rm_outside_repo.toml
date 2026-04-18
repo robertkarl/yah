@@ -1,4 +1,4 @@
-command = "rm /tmp/scratch.txt"
+command = "rm /opt/scratch.txt"
 capabilities = ["delete-outside-repo"]
 notes = "rm of a file outside the repo"
 

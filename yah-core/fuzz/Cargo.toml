@@ -1,0 +1,29 @@
+[package]
+name = "yah-core-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+
+[dependencies.yah-core]
+path = ".."
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "fuzz_classify"
+path = "fuzz_targets/fuzz_classify.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_classify_context"
+path = "fuzz_targets/fuzz_classify_context.rs"
+doc = false

@@ -1,4 +1,4 @@
-command = "sudo env PATH=/usr/bin rm /tmp/file"
+command = "sudo env PATH=/usr/bin rm /opt/file"
 capabilities = ["privilege-escalation", "delete-outside-repo"]
 notes = "sudo + env wrapper chain, inner rm classified"
 

@@ -1,4 +1,4 @@
-command = "echo hello > /tmp/out.txt"
+command = "echo hello > /etc/out.txt"
 capabilities = ["write-outside-repo"]
 notes = "Write redirect to file outside repo"
 

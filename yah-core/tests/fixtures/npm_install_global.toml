@@ -1,0 +1,8 @@
+command = "npm install -g typescript"
+capabilities = ["package-install"]
+notes = "npm global install"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

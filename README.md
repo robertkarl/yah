@@ -77,7 +77,7 @@ $ yah hook
 Install into Claude Code settings:
 
 ```sh
-$ yah install
+$ yah install-hook
 # writes hook config to ~/.claude/settings.json
 ```
 
@@ -160,3 +160,7 @@ Run the scorecard:
 ```sh
 cargo test --test corpus -- --nocapture
 ```
+
+## Why not a sandbox?
+
+You could run your agent in a container or VM and avoid the whole problem. That's a fine choice. If you want airtight isolation and don't mind the overhead of managing container images, volume mounts, and network rules for every coding session — go for it. yah is for people who want to work in their actual dev environment with their actual dotfiles and tools, and just need a sharp-eyed bouncer standing between the agent and the commands that would actually ruin their day.

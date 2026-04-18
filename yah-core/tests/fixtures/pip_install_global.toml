@@ -1,0 +1,8 @@
+command = "pip install requests"
+capabilities = ["package-install"]
+notes = "Global pip install"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

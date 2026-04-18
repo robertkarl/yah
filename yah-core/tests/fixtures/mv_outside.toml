@@ -1,4 +1,4 @@
-command = "mv important.txt /tmp/"
+command = "mv important.txt /opt/"
 capabilities = ["write-outside-repo"]
 notes = "mv file to outside repo"
 

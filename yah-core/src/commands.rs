@@ -89,6 +89,9 @@ pub fn classify_command(name: &str, args: &[String]) -> HashSet<Capability> {
         }
     }
 
+    // Package managers
+    classify_package_install(basename, args, &mut caps);
+
     // Git-specific capabilities
     if basename == "git" {
         classify_git(args, &mut caps);
@@ -127,6 +130,62 @@ pub fn classify_command(name: &str, args: &[String]) -> HashSet<Capability> {
     }
 
     caps
+}
+
+fn classify_package_install(basename: &str, args: &[String], caps: &mut HashSet<Capability>) {
+    match basename {
+        "pip" | "pip3" => {
+            if !args.iter().any(|a| a == "install") {
+                return;
+            }
+            // Safe: --target to a local dir, -e . (editable install of current project)
+            let has_target = args.windows(2).any(|w| w[0] == "--target" || w[0] == "-t");
+            let has_editable_dot =
+                args.windows(2).any(|w| (w[0] == "-e" || w[0] == "--editable") && w[1] == ".");
+            if has_target || has_editable_dot {
+                return;
+            }
+            caps.insert(Capability::PackageInstall);
+        }
+        "npm" | "npx" | "yarn" | "pnpm" | "bun" => {
+            if args.first().map(|a| a.as_str()) == Some("install")
+                || args.first().map(|a| a.as_str()) == Some("add")
+                || args.first().map(|a| a.as_str()) == Some("i")
+            {
+                // npm install with no args (from lockfile) or with -g/--global
+                let is_global = args.iter().any(|a| a == "-g" || a == "--global");
+                if is_global {
+                    caps.insert(Capability::PackageInstall);
+                }
+                // npm install <package> (adding a new dep)
+                let has_package = args[1..].iter().any(|a| !a.starts_with('-'));
+                if has_package {
+                    caps.insert(Capability::PackageInstall);
+                }
+            }
+        }
+        "cargo" => {
+            if args.first().map(|a| a.as_str()) == Some("install") {
+                caps.insert(Capability::PackageInstall);
+            }
+        }
+        "gem" => {
+            if args.first().map(|a| a.as_str()) == Some("install") {
+                caps.insert(Capability::PackageInstall);
+            }
+        }
+        "go" => {
+            if args.first().map(|a| a.as_str()) == Some("install") {
+                caps.insert(Capability::PackageInstall);
+            }
+        }
+        "brew" | "apt" | "apt-get" | "dnf" | "yum" | "pacman" | "apk" => {
+            if args.iter().any(|a| a == "install" || a == "-S") {
+                caps.insert(Capability::PackageInstall);
+            }
+        }
+        _ => {}
+    }
 }
 
 fn classify_git(args: &[String], caps: &mut HashSet<Capability>) {

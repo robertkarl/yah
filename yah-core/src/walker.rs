@@ -445,7 +445,7 @@ fn classify_paths_for_command(
                     if paths::is_sensitive_path(&normalized, ctx) {
                         caps.insert(Capability::ReadSecretPath);
                     }
-                    if paths::is_inside_repo(&normalized, ctx) {
+                    if paths::is_inside_repo(&normalized, ctx) || paths::is_scratch_path(&normalized) {
                         caps.insert(Capability::DeleteInsideRepo);
                     } else {
                         caps.insert(Capability::DeleteOutsideRepo);
@@ -465,7 +465,7 @@ fn classify_paths_for_command(
                     if paths::is_sensitive_path(&normalized, ctx) {
                         caps.insert(Capability::ReadSecretPath);
                     }
-                    if paths::is_inside_repo(&normalized, ctx) {
+                    if paths::is_inside_repo(&normalized, ctx) || paths::is_scratch_path(&normalized) {
                         caps.insert(Capability::WriteInsideRepo);
                     } else {
                         caps.insert(Capability::WriteOutsideRepo);
@@ -502,7 +502,7 @@ fn classify_paths_for_command(
             let path_args = extract_path_args(args);
             for path_str in &path_args {
                 if let Some(normalized) = paths::normalize_path(path_str, ctx) {
-                    if paths::is_inside_repo(&normalized, ctx) {
+                    if paths::is_inside_repo(&normalized, ctx) || paths::is_scratch_path(&normalized) {
                         caps.insert(Capability::WriteInsideRepo);
                     } else {
                         caps.insert(Capability::WriteOutsideRepo);
@@ -517,7 +517,7 @@ fn classify_paths_for_command(
             let path_args = extract_path_args(args);
             for path_str in &path_args {
                 if let Some(normalized) = paths::normalize_path(path_str, ctx) {
-                    if paths::is_inside_repo(&normalized, ctx) {
+                    if paths::is_inside_repo(&normalized, ctx) || paths::is_scratch_path(&normalized) {
                         caps.insert(Capability::WriteInsideRepo);
                     } else {
                         caps.insert(Capability::WriteOutsideRepo);
@@ -529,7 +529,7 @@ fn classify_paths_for_command(
             let path_args = extract_path_args(args);
             for path_str in &path_args {
                 if let Some(normalized) = paths::normalize_path(path_str, ctx) {
-                    if paths::is_inside_repo(&normalized, ctx) {
+                    if paths::is_inside_repo(&normalized, ctx) || paths::is_scratch_path(&normalized) {
                         caps.insert(Capability::WriteInsideRepo);
                     } else {
                         caps.insert(Capability::WriteOutsideRepo);
@@ -543,7 +543,7 @@ fn classify_paths_for_command(
             for arg in args {
                 if let Some(path) = arg.strip_prefix("of=") {
                     if let Some(normalized) = paths::normalize_path(path, ctx) {
-                        if paths::is_inside_repo(&normalized, ctx) {
+                        if paths::is_inside_repo(&normalized, ctx) || paths::is_scratch_path(&normalized) {
                             caps.insert(Capability::WriteInsideRepo);
                         } else {
                             caps.insert(Capability::WriteOutsideRepo);
@@ -625,7 +625,7 @@ fn classify_redirect(node: Node, source: &str, ctx: &Context) -> HashSet<Capabil
                 }
 
                 if is_write {
-                    if paths::is_inside_repo(&normalized, ctx) {
+                    if paths::is_inside_repo(&normalized, ctx) || paths::is_scratch_path(&normalized) {
                         caps.insert(Capability::WriteInsideRepo);
                     } else {
                         caps.insert(Capability::WriteOutsideRepo);

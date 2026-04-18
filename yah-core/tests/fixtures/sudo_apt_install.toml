@@ -1,6 +1,6 @@
 command = "sudo apt install vim"
-capabilities = ["privilege-escalation"]
-notes = "sudo apt install — privilege escalation"
+capabilities = ["privilege-escalation", "package-install"]
+notes = "sudo apt install — privilege escalation + package install"
 
 [context]
 cwd = "/home/user/project"

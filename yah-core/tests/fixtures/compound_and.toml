@@ -1,4 +1,4 @@
-command = "curl https://example.com && rm /tmp/file"
+command = "curl https://example.com && rm /opt/file"
 capabilities = ["net-egress", "delete-outside-repo"]
 notes = "Compound && — union of capabilities"
 
