@@ -117,7 +117,7 @@ fn hook_ask_capability_prompts() {
         .assert()
         .success()
         .stdout(predicate::str::contains("ask"))
-        .stdout(predicate::str::contains("delete-outside-repo"));
+        .stdout(predicate::str::contains("Needs approval: [delete-outside-repo]"));
 }
 
 #[test]
@@ -129,7 +129,8 @@ fn hook_deny_history_rewrite() {
         .assert()
         .success()
         .stdout(predicate::str::contains("deny"))
-        .stdout(predicate::str::contains("history-rewrite"));
+        .stdout(predicate::str::contains("yah blocked this command"))
+        .stdout(predicate::str::contains("Denied by policy: [history-rewrite]"));
 }
 
 #[test]

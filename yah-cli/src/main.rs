@@ -317,8 +317,6 @@ fn handle_hook(ctx: &Context, classifier: &mut Classifier) {
 
     // Apply default policy: capability -> allow / ask / deny
     let decision = evaluate_policy(&caps);
-    let cap_list: Vec<String> = sorted_caps(&caps).iter().map(|c| c.to_string()).collect();
-    let reason = format!("yah: {}", cap_list.join(", "));
 
     match decision {
         PolicyDecision::Allow => {
@@ -326,6 +324,7 @@ fn handle_hook(ctx: &Context, classifier: &mut Classifier) {
             std::process::exit(0);
         }
         PolicyDecision::Ask => {
+            let reason = format_ask_reason(&caps);
             let response = serde_json::json!({
                 "hookSpecificOutput": {
                     "hookEventName": "PreToolUse",
@@ -337,6 +336,7 @@ fn handle_hook(ctx: &Context, classifier: &mut Classifier) {
             std::process::exit(0);
         }
         PolicyDecision::Deny => {
+            let reason = format_deny_reason(&caps);
             let response = serde_json::json!({
                 "hookSpecificOutput": {
                     "hookEventName": "PreToolUse",
@@ -348,6 +348,41 @@ fn handle_hook(ctx: &Context, classifier: &mut Classifier) {
             std::process::exit(0);
         }
     }
+}
+
+fn format_deny_reason(caps: &std::collections::HashSet<Capability>) -> String {
+    let denied: Vec<String> = sorted_caps(caps)
+        .iter()
+        .filter(|c| default_policy(c) == PolicyDecision::Deny)
+        .map(|c| c.to_string())
+        .collect();
+    let all: Vec<String> = sorted_caps(caps).iter().map(|c| c.to_string()).collect();
+
+    format!(
+        "yah blocked this command. Capabilities detected: [{}]. \
+         Denied by policy: [{}]. \
+         Edit default_policy() in yah-cli/src/main.rs to change. \
+         Run `yah --help` to see current policy.",
+        all.join(", "),
+        denied.join(", "),
+    )
+}
+
+fn format_ask_reason(caps: &std::collections::HashSet<Capability>) -> String {
+    let asking: Vec<String> = sorted_caps(caps)
+        .iter()
+        .filter(|c| default_policy(c) == PolicyDecision::Ask)
+        .map(|c| c.to_string())
+        .collect();
+    let all: Vec<String> = sorted_caps(caps).iter().map(|c| c.to_string()).collect();
+
+    format!(
+        "yah detected capabilities: [{}]. \
+         Needs approval: [{}]. \
+         Run `yah --help` to see current policy.",
+        all.join(", "),
+        asking.join(", "),
+    )
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
