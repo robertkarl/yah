@@ -6,7 +6,27 @@ use std::path::PathBuf;
 use yah_core::{Capability, Classifier, Context};
 
 #[derive(Parser)]
-#[command(name = "yah", version, about = "Shell AST capability classifier")]
+#[command(
+    name = "yah",
+    version,
+    about = "Shell AST capability classifier",
+    after_help = "\
+Examples:
+  yah classify \"curl example.com\"
+  yah check \"ls\"
+  yah explain \"sudo rm -rf /\"
+  yah install   # install as Claude Code hook
+
+Default policy (capability -> decision):
+  allow:  write-inside-repo, delete-inside-repo, net-egress
+  deny:   history-rewrite
+  ask:    everything else (write-outside-repo, delete-outside-repo,
+          read-secret-path, exec-dynamic, privilege-escalation,
+          net-ingress, process-signal)
+
+To change the defaults, edit the default_policy() function in
+yah-cli/src/main.rs and rebuild with `cargo install --path yah-cli`."
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
