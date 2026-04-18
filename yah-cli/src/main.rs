@@ -17,6 +17,19 @@ Examples:
   yah explain \"sudo rm -rf /\"
   yah install   # install as Claude Code hook
 
+Recommended Claude Code setup:
+  Don't run with --dangerously-ignore-permissions. Instead, add these
+  to your .claude/settings.local.json under permissions.allow:
+
+    \"Bash\",
+    \"WebFetch\",
+    \"WebSearch\"
+
+  yah will block destructive git history modifications and ask about
+  sensitive paths. yah uses a bash tree-sitter to inspect the command
+  and understand what bash will actually run, with more detail than
+  the crude prefixes that Claude Code permissions use.
+
 Default policy (capability -> decision):
   allow:  write-inside-repo, delete-inside-repo, net-egress
   deny:   history-rewrite
