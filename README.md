@@ -1,3 +1,7 @@
+# tl;dr
+
+#### Give your agents the "Bash" permission but block clearly destructive actions like force push.
+
 # yah
 
 yah in action:
