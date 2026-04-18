@@ -44,6 +44,13 @@ $ yah classify "sudo rm -rf /"
 Command: sudo rm -rf /
   delete-outside-repo — Deletes files outside the project [ask]
   privilege-escalation — Escalates privileges [ask]
+  overall policy — delete-outside-repo, privilege-escalation [ask]
+
+$ yah classify "git push --force origin main"
+Command: git push --force origin main
+  net-egress — Makes outbound network connections [allow]
+  history-rewrite — Rewrites git history [ask]
+  overall policy — history-rewrite + net-egress [deny]
 
 $ yah classify "ls"
 Command: ls
@@ -139,10 +146,22 @@ cargo build --release
 | `delete-inside-repo` | Deletes files inside the project root |
 | `delete-outside-repo` | Deletes files outside the project root |
 | `read-secret-path` | Reads sensitive files (~/.ssh, ~/.aws, .env, etc.) |
-| `history-rewrite` | Rewrites git history (force push, reset --hard, rebase) |
+| `history-rewrite` | Rewrites git history (commit --amend, reset --hard, rebase, force push) |
 | `exec-dynamic` | Dynamic/unparseable command execution (eval, bash -c, etc.) |
 | `process-signal` | Sends signals to processes (kill, pkill) |
 | `privilege-escalation` | Escalates privileges (sudo, doas) |
+| `package-install` | Installs system or global packages (brew install, pip install, npm install -g) |
+
+## Policy
+
+- Policy is compile-time configuration:
+  edit `capability_policy_rules()` and `command_policy_override()` in `yah-cli/src/main.rs`, then rebuild.
+- Per-capability defaults:
+  `write-inside-repo`, `delete-inside-repo`, and `net-egress` are allowed by default.
+- Sensitive capabilities ask by default:
+  `history-rewrite`, `write-outside-repo`, `delete-outside-repo`, `read-secret-path`, `exec-dynamic`, `privilege-escalation`, `net-ingress`, `process-signal`, and `package-install`.
+- Capability combinations can be stricter than any individual capability:
+  `history-rewrite + net-egress` is denied, which blocks force-push style commands while still asking on local-only rewrites like `git commit --amend`.
 
 ## Design
 
@@ -159,7 +178,7 @@ yah/
   yah-core/          # Library crate — classifier logic
     src/
       lib.rs         # Classifier struct, re-exports
-      capability.rs  # Capability enum (11 variants)
+      capability.rs  # Capability enum (12 variants)
       context.rs     # Context struct (cwd, project_root, home, env)
       walker.rs      # AST traversal
       commands.rs    # Command-specific classification
@@ -176,11 +195,11 @@ yah/
 
 ## Test Corpus
 
-82 TOML fixture files covering:
+80+ TOML fixture files covering:
 - Safe commands (ls, echo, git status, cargo test)
 - Network (curl, wget, ssh, scp, rsync, nc)
 - File operations (rm, cp, mv, touch, mkdir, tee, dd, chmod)
-- Git operations (push --force, reset --hard, rebase, filter-branch, clean)
+- Git operations (commit --amend, push --force, reset --hard, rebase, filter-branch, clean)
 - Dynamic execution (eval, source, bash -c, python -c, node -e, perl -e, ruby -e)
 - Sensitive paths (~/.ssh, ~/.aws, ~/.kube, .env, credentials.json)
 - Wrappers (sudo, env, nice, timeout, nohup)
@@ -197,3 +216,10 @@ cargo test --test corpus -- --nocapture
 ## Why not a sandbox?
 
 You could run your agent in a container or VM and avoid the whole problem. That's a fine choice. If you want airtight isolation and don't mind the overhead of managing container images, volume mounts, and network rules for every coding session — go for it. yah is for people who want to work in their actual dev environment with their actual dotfiles and tools, and just need a sharp-eyed bouncer standing between the agent and the commands that would actually ruin their day.
+
+
+# Fuzzing core
+
+```
+cargo +nightly fuzz run fuzz_classify fuzz/corpus/fuzz_classify/ -j4
+```

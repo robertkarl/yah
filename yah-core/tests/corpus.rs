@@ -31,12 +31,7 @@ fn load_fixtures() -> Vec<(String, Fixture)> {
         if path.extension().and_then(|e| e.to_str()) != Some("toml") {
             continue;
         }
-        let name = path
-            .file_stem()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string();
+        let name = path.file_stem().unwrap().to_str().unwrap().to_string();
         let content = fs::read_to_string(&path)
             .unwrap_or_else(|e| panic!("failed to read {}: {}", path.display(), e));
         let fixture: Fixture = toml::from_str(&content)
@@ -115,10 +110,6 @@ fn corpus_tests() {
         for f in &failures {
             println!("{}", f);
         }
-        panic!(
-            "{} of {} corpus tests failed",
-            failed,
-            passed + failed
-        );
+        panic!("{} of {} corpus tests failed", failed, passed + failed);
     }
 }

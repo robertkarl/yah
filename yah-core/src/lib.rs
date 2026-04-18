@@ -94,7 +94,11 @@ mod tests {
     fn safe_ls() {
         let mut c = Classifier::new();
         let caps = c.classify("ls", &test_ctx());
-        assert!(caps.is_empty(), "ls should have no capabilities: {:?}", caps);
+        assert!(
+            caps.is_empty(),
+            "ls should have no capabilities: {:?}",
+            caps
+        );
     }
 
     #[test]
@@ -180,6 +184,14 @@ mod tests {
     }
 
     #[test]
+    fn git_commit_amend() {
+        let mut c = Classifier::new();
+        let caps = c.classify("git commit --amend", &test_ctx());
+        assert!(caps.contains(&Capability::HistoryRewrite));
+        assert!(!caps.contains(&Capability::NetEgress));
+    }
+
+    #[test]
     fn kill_process() {
         let mut c = Classifier::new();
         let caps = c.classify("kill -9 1234", &test_ctx());
@@ -212,6 +224,45 @@ mod tests {
         let mut c = Classifier::new();
         let caps = c.classify("python3 -m http.server", &test_ctx());
         assert!(caps.contains(&Capability::NetIngress));
+    }
+
+    #[test]
+    fn python_module_pip_install() {
+        let mut c = Classifier::new();
+        let caps = c.classify("python -m pip install requests", &test_ctx());
+        assert!(caps.contains(&Capability::PackageInstall));
+    }
+
+    #[test]
+    fn stderr_redirect_outside() {
+        let mut c = Classifier::new();
+        let caps = c.classify("echo hello 2> /opt/out.txt", &test_ctx());
+        assert!(caps.contains(&Capability::WriteOutsideRepo));
+    }
+
+    #[test]
+    fn nc_connect_only() {
+        let mut c = Classifier::new();
+        let caps = c.classify("nc localhost 80", &test_ctx());
+        assert!(caps.contains(&Capability::NetEgress));
+        assert!(!caps.contains(&Capability::NetIngress));
+    }
+
+    #[test]
+    fn chmod_644_is_not_privilege_escalation() {
+        let mut c = Classifier::new();
+        let caps = c.classify("chmod 644 foo.txt", &test_ctx());
+        assert!(caps.contains(&Capability::WriteInsideRepo));
+        assert!(!caps.contains(&Capability::PrivilegeEscalation));
+    }
+
+    #[test]
+    fn git_push_dynamic_flags_asks_fail_closed() {
+        let mut c = Classifier::new();
+        let caps = c.classify("FLAGS=--force && git push $FLAGS", &test_ctx());
+        assert!(caps.contains(&Capability::NetEgress));
+        assert!(caps.contains(&Capability::ExecDynamic));
+        assert!(!caps.contains(&Capability::HistoryRewrite));
     }
 
     #[test]

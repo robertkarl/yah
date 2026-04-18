@@ -138,7 +138,10 @@ fn skip_wrapper_args<'a>(wrapper: &str, args: &'a [String]) -> Option<(usize, &'
         }
         "ionice" => {
             while i < args.len() && args[i].starts_with('-') {
-                if matches!(args[i].as_str(), "-c" | "-n" | "-p" | "--class" | "--classdata") {
+                if matches!(
+                    args[i].as_str(),
+                    "-c" | "-n" | "-p" | "--class" | "--classdata"
+                ) {
                     i += 2;
                 } else {
                     i += 1;

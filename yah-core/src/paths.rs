@@ -22,15 +22,9 @@ const SENSITIVE_EXACT_SUFFIXES: &[&str] = &[
     "/.vault-token",
 ];
 
-const SENSITIVE_FILENAMES: &[&str] = &[
-    ".env",
-    "credentials.json",
-];
+const SENSITIVE_FILENAMES: &[&str] = &[".env", "credentials.json"];
 
-const SENSITIVE_FILENAME_PREFIXES: &[&str] = &[
-    ".env.",
-    "service-account",
-];
+const SENSITIVE_FILENAME_PREFIXES: &[&str] = &[".env.", "service-account"];
 
 /// Normalize a path string to an absolute PathBuf using string-level operations only.
 /// No filesystem access.

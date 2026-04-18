@@ -1,0 +1,8 @@
+command = "chmod 644 foo.txt"
+capabilities = ["write-inside-repo"]
+notes = "normal chmod modes are writes, not privilege escalation"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

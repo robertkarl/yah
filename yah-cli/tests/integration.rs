@@ -34,10 +34,7 @@ fn classify_json() {
 
 #[test]
 fn check_safe_exits_0() {
-    yah()
-        .args(["check", "echo hello"])
-        .assert()
-        .success();
+    yah().args(["check", "echo hello"]).assert().success();
 }
 
 #[test]
@@ -117,20 +114,52 @@ fn hook_ask_capability_prompts() {
         .assert()
         .success()
         .stdout(predicate::str::contains("ask"))
-        .stdout(predicate::str::contains("Needs approval: [delete-outside-repo]"));
+        .stdout(predicate::str::contains(
+            "Needs approval: [delete-outside-repo]",
+        ));
 }
 
 #[test]
-fn hook_deny_history_rewrite() {
-    // history-rewrite is denied
+fn hook_deny_history_rewrite_with_net_egress() {
+    // history-rewrite + net-egress is denied by combination policy
     yah()
         .arg("hook")
-        .write_stdin(r#"{"tool_name":"Bash","tool_input":{"command":"git push --force origin main"}}"#)
+        .write_stdin(
+            r#"{"tool_name":"Bash","tool_input":{"command":"git push --force origin main"}}"#,
+        )
         .assert()
         .success()
         .stdout(predicate::str::contains("deny"))
         .stdout(predicate::str::contains("yah blocked this command"))
-        .stdout(predicate::str::contains("Denied by policy: [history-rewrite]"));
+        .stdout(predicate::str::contains(
+            "Denied by policy: [history-rewrite + net-egress]",
+        ));
+}
+
+#[test]
+fn hook_ask_history_rewrite_without_net_egress() {
+    yah()
+        .arg("hook")
+        .write_stdin(r#"{"tool_name":"Bash","tool_input":{"command":"git commit --amend"}}"#)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("ask"))
+        .stdout(predicate::str::contains(
+            "Needs approval: [history-rewrite]",
+        ));
+}
+
+#[test]
+fn hook_ask_dynamic_git_push_flags() {
+    yah()
+        .arg("hook")
+        .write_stdin(
+            r#"{"tool_name":"Bash","tool_input":{"command":"FLAGS=--force && git push $FLAGS"}}"#,
+        )
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("ask"))
+        .stdout(predicate::str::contains("exec-dynamic"));
 }
 
 #[test]
@@ -169,6 +198,19 @@ fn hook_deny_global_pip3_install() {
     yah()
         .arg("hook")
         .write_stdin(r#"{"tool_name":"Bash","tool_input":{"command":"pip3 install flask"}}"#)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("deny"))
+        .stdout(predicate::str::contains("blocked global pip install"));
+}
+
+#[test]
+fn hook_deny_python_module_pip_install() {
+    yah()
+        .arg("hook")
+        .write_stdin(
+            r#"{"tool_name":"Bash","tool_input":{"command":"python -m pip install requests"}}"#,
+        )
         .assert()
         .success()
         .stdout(predicate::str::contains("deny"))
@@ -233,6 +275,17 @@ fn hook_ask_ssh_user_at_sensitive_host() {
     yah()
         .arg("hook")
         .write_stdin(r#"{"tool_name":"Bash","tool_input":{"command":"ssh root@192.168.50.57"}}"#)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("ask"))
+        .stdout(predicate::str::contains("sensitive host"));
+}
+
+#[test]
+fn hook_ask_wrapped_ssh_sensitive_host() {
+    yah()
+        .arg("hook")
+        .write_stdin(r#"{"tool_name":"Bash","tool_input":{"command":"env SSH_AUTH_SOCK=/tmp/socket ssh root@192.168.50.57"}}"#)
         .assert()
         .success()
         .stdout(predicate::str::contains("ask"))

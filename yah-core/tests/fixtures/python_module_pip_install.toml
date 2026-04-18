@@ -1,0 +1,8 @@
+command = "python -m pip install requests"
+capabilities = ["package-install"]
+notes = "python -m pip install is still a package install"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

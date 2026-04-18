@@ -1,0 +1,8 @@
+command = "FLAGS=--force && git push $FLAGS"
+capabilities = ["net-egress", "exec-dynamic"]
+notes = "Shell-local flag expansion on git push should fail closed"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

@@ -1,0 +1,8 @@
+command = "git commit --amend"
+capabilities = ["history-rewrite"]
+notes = "git commit --amend rewrites local history without network access"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

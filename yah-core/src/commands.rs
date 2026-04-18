@@ -3,8 +3,22 @@ use std::collections::HashSet;
 
 /// Network egress commands.
 pub const NET_EGRESS_COMMANDS: &[&str] = &[
-    "curl", "wget", "ssh", "scp", "sftp", "rsync", "nc", "ncat", "netcat", "telnet", "ftp",
-    "ping", "traceroute", "dig", "nslookup", "host",
+    "curl",
+    "wget",
+    "ssh",
+    "scp",
+    "sftp",
+    "rsync",
+    "nc",
+    "ncat",
+    "netcat",
+    "telnet",
+    "ftp",
+    "ping",
+    "traceroute",
+    "dig",
+    "nslookup",
+    "host",
 ];
 
 /// Network ingress commands.
@@ -21,8 +35,8 @@ pub const EXEC_DYNAMIC_COMMANDS: &[&str] = &["eval", "source"];
 
 /// Wrapper commands that should be stripped before classifying the inner command.
 pub const WRAPPER_COMMANDS: &[&str] = &[
-    "env", "nice", "timeout", "time", "ionice", "strace", "ltrace", "nohup", "setsid",
-    "command", "builtin",
+    "env", "nice", "timeout", "time", "ionice", "strace", "ltrace", "nohup", "setsid", "command",
+    "builtin",
 ];
 
 /// Runtime exec commands (e.g., `python -c "..."`, `node -e "..."`).
@@ -65,15 +79,21 @@ pub fn classify_command(name: &str, args: &[String]) -> HashSet<Capability> {
     }
 
     // Network ingress — nc/ncat with -l flag
-    if NET_INGRESS_COMMANDS.contains(&basename) && args.iter().any(|a| a == "-l" || a.contains('l'))
-    {
+    if NET_INGRESS_COMMANDS.contains(&basename) && args.iter().any(|a| is_netcat_listen_flag(a)) {
         caps.insert(Capability::NetIngress);
     }
 
     // python -m http.server
     if matches!(basename, "python" | "python3") {
-        if args.windows(2).any(|w| w[0] == "-m" && w[1] == "http.server") {
+        if args
+            .windows(2)
+            .any(|w| w[0] == "-m" && w[1] == "http.server")
+        {
             caps.insert(Capability::NetIngress);
+        }
+
+        if let Some(pip_args) = python_module_args(args, "pip") {
+            classify_package_install("pip", pip_args, &mut caps);
         }
     }
 
@@ -114,7 +134,7 @@ pub fn classify_command(name: &str, args: &[String]) -> HashSet<Capability> {
 
     // chmod with setuid
     if basename == "chmod" {
-        if args.iter().any(|a| a.contains("u+s") || a.contains("4")) {
+        if args.iter().any(|a| chmod_sets_setuid(a)) {
             caps.insert(Capability::PrivilegeEscalation);
         }
     }
@@ -140,8 +160,9 @@ fn classify_package_install(basename: &str, args: &[String], caps: &mut HashSet<
             }
             // Safe: --target to a local dir, -e . (editable install of current project)
             let has_target = args.windows(2).any(|w| w[0] == "--target" || w[0] == "-t");
-            let has_editable_dot =
-                args.windows(2).any(|w| (w[0] == "-e" || w[0] == "--editable") && w[1] == ".");
+            let has_editable_dot = args
+                .windows(2)
+                .any(|w| (w[0] == "-e" || w[0] == "--editable") && w[1] == ".");
             if has_target || has_editable_dot {
                 return;
             }
@@ -194,9 +215,16 @@ fn classify_git(args: &[String], caps: &mut HashSet<Capability>) {
     }
 
     let subcommand = &args[0];
+    let has_dynamic_args = args.iter().skip(1).any(|arg| git_arg_is_dynamic(arg));
     match subcommand.as_str() {
         "push" => {
-            if args.iter().any(|a| a == "--force" || a == "-f" || a == "--force-with-lease") {
+            if has_dynamic_args {
+                caps.insert(Capability::ExecDynamic);
+            }
+            if args
+                .iter()
+                .any(|a| a == "--force" || a == "-f" || a == "--force-with-lease")
+            {
                 caps.insert(Capability::HistoryRewrite);
             }
             caps.insert(Capability::NetEgress);
@@ -205,20 +233,48 @@ fn classify_git(args: &[String], caps: &mut HashSet<Capability>) {
             caps.insert(Capability::NetEgress);
         }
         "reset" => {
+            if has_dynamic_args {
+                caps.insert(Capability::ExecDynamic);
+            }
             if args.iter().any(|a| a == "--hard") {
                 caps.insert(Capability::HistoryRewrite);
             }
         }
         "rebase" | "filter-branch" | "filter-repo" => {
+            if has_dynamic_args {
+                caps.insert(Capability::ExecDynamic);
+            }
             caps.insert(Capability::HistoryRewrite);
         }
+        "commit" => {
+            if has_dynamic_args {
+                caps.insert(Capability::ExecDynamic);
+            }
+            if args.iter().any(|a| a == "--amend") {
+                caps.insert(Capability::HistoryRewrite);
+            }
+        }
         "clean" => {
-            if args.iter().any(|a| a == "-f" || a == "-fd" || a == "-fdx" || a == "--force") {
+            if has_dynamic_args {
+                caps.insert(Capability::ExecDynamic);
+            }
+            if args
+                .iter()
+                .any(|a| a == "-f" || a == "-fd" || a == "-fdx" || a == "--force")
+            {
                 caps.insert(Capability::DeleteInsideRepo);
             }
         }
         _ => {}
     }
+}
+
+fn git_arg_is_dynamic(arg: &str) -> bool {
+    arg.contains('$')
+        || arg.contains("`")
+        || arg.contains("$(")
+        || arg.contains("<(")
+        || arg.contains(">(")
 }
 
 fn classify_xargs(args: &[String], caps: &mut HashSet<Capability>) {
@@ -249,6 +305,44 @@ fn classify_xargs(args: &[String], caps: &mut HashSet<Capability>) {
         return;
     }
     // xargs with no command defaults to echo — harmless
+}
+
+fn is_netcat_listen_flag(arg: &str) -> bool {
+    arg == "-l"
+        || arg == "--listen"
+        || (arg.starts_with('-') && !arg.starts_with("--") && arg[1..].contains('l'))
+}
+
+fn python_module_args<'a>(args: &'a [String], module: &str) -> Option<&'a [String]> {
+    args.windows(2)
+        .position(|w| w[0] == "-m" && w[1] == module)
+        .map(|idx| &args[idx + 2..])
+}
+
+fn chmod_sets_setuid(arg: &str) -> bool {
+    if arg.chars().all(|c| matches!(c, '0'..='7')) {
+        let mode = arg.trim_start_matches('0');
+        if mode.len() >= 4 {
+            let special = mode.as_bytes()[mode.len() - 4] as char;
+            return matches!(special, '4' | '5' | '6' | '7');
+        }
+        return false;
+    }
+
+    for clause in arg.split(',') {
+        if let Some((who, perms)) = clause.split_once('+') {
+            if perms.contains('s') && (who.is_empty() || who.contains('u') || who.contains('a')) {
+                return true;
+            }
+        }
+        if let Some((who, perms)) = clause.split_once('=') {
+            if perms.contains('s') && (who.is_empty() || who.contains('u') || who.contains('a')) {
+                return true;
+            }
+        }
+    }
+
+    false
 }
 
 /// Check if a command name is a known wrapper that should be unwrapped.

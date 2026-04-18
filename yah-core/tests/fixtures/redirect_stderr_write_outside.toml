@@ -1,0 +1,8 @@
+command = "echo hello 2> /etc/out.txt"
+capabilities = ["write-outside-repo"]
+notes = "stderr redirect outside repo should still count as a write"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"
