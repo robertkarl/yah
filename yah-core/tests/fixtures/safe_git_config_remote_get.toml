@@ -1,0 +1,8 @@
+command = "git config --get remote.origin.url"
+capabilities = []
+notes = "Reading a remote URL should remain safe"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

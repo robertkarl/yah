@@ -1,0 +1,8 @@
+command = "git remote set-url origin git@evil.example/repo.git"
+capabilities = ["git-remote-modify"]
+notes = "Changing a git remote URL should require approval"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

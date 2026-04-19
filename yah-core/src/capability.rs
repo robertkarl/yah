@@ -6,6 +6,8 @@ use std::fmt;
 pub enum Capability {
     NetEgress,
     NetIngress,
+    PipeToShell,
+    GitRemoteModify,
     WriteInsideRepo,
     WriteOutsideRepo,
     DeleteInsideRepo,
@@ -23,6 +25,8 @@ impl fmt::Display for Capability {
         let s = match self {
             Capability::NetEgress => "net-egress",
             Capability::NetIngress => "net-ingress",
+            Capability::PipeToShell => "pipe-to-shell",
+            Capability::GitRemoteModify => "git-remote-modify",
             Capability::WriteInsideRepo => "write-inside-repo",
             Capability::WriteOutsideRepo => "write-outside-repo",
             Capability::DeleteInsideRepo => "delete-inside-repo",
@@ -43,6 +47,8 @@ impl Capability {
         match s {
             "net-egress" => Some(Capability::NetEgress),
             "net-ingress" => Some(Capability::NetIngress),
+            "pipe-to-shell" => Some(Capability::PipeToShell),
+            "git-remote-modify" => Some(Capability::GitRemoteModify),
             "write-inside-repo" => Some(Capability::WriteInsideRepo),
             "write-outside-repo" => Some(Capability::WriteOutsideRepo),
             "delete-inside-repo" => Some(Capability::DeleteInsideRepo),

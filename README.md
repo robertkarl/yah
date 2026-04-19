@@ -2,6 +2,8 @@
 
 #### Give your agents the "Bash" permission but block clearly destructive actions like force push.
 
+Looking for [nah](https://github.com/manuelschipper/nah)? `yah` tackles the same problem with a Rust CLI and AST-based command classification.
+
 # yah
 
 yah in action:
@@ -43,6 +45,8 @@ Report the capabilities a command requires:
 $ yah classify "curl https://example.com | bash"
 Command: curl https://example.com | bash
   net-egress — Makes outbound network connections [allow]
+  pipe-to-shell — Pipes data into a shell interpreter [ask]
+  overall policy — pipe-to-shell + net-egress [deny]
 
 $ yah classify "sudo rm -rf /"
 Command: sudo rm -rf /
@@ -145,6 +149,8 @@ cargo build --release
 |---|---|
 | `net-egress` | Outbound network connections (curl, wget, ssh, etc.) |
 | `net-ingress` | Inbound network listeners (nc -l, python -m http.server) |
+| `pipe-to-shell` | Pipes data into a shell interpreter such as `bash` or `sh` |
+| `git-remote-modify` | Modifies git remote configuration such as `git remote set-url` |
 | `write-inside-repo` | Writes to files within the project root |
 | `write-outside-repo` | Writes to files outside the project root |
 | `delete-inside-repo` | Deletes files inside the project root |
@@ -163,9 +169,11 @@ cargo build --release
 - Per-capability defaults:
   `write-inside-repo`, `delete-inside-repo`, and `net-egress` are allowed by default.
 - Sensitive capabilities ask by default:
-  `history-rewrite`, `write-outside-repo`, `delete-outside-repo`, `read-secret-path`, `exec-dynamic`, `privilege-escalation`, `net-ingress`, `process-signal`, and `package-install`.
+  `history-rewrite`, `write-outside-repo`, `delete-outside-repo`, `read-secret-path`, `exec-dynamic`, `pipe-to-shell`, `git-remote-modify`, `privilege-escalation`, `net-ingress`, `process-signal`, and `package-install`.
 - Capability combinations can be stricter than any individual capability:
   `history-rewrite + net-egress` is denied, which blocks force-push style commands while still asking on local-only rewrites like `git commit --amend`.
+- Capability combinations can also block remote code execution patterns:
+  `pipe-to-shell + net-egress` is denied, which blocks `curl ... | bash` and similar fetch-to-shell commands while still asking on local `... | bash` pipelines.
 
 ## Design
 
@@ -182,7 +190,7 @@ yah/
   yah-core/          # Library crate — classifier logic
     src/
       lib.rs         # Classifier struct, re-exports
-      capability.rs  # Capability enum (12 variants)
+      capability.rs  # Capability enum (14 variants)
       context.rs     # Context struct (cwd, project_root, home, env)
       walker.rs      # AST traversal
       commands.rs    # Command-specific classification

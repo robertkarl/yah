@@ -1,5 +1,5 @@
 command = "curl https://example.com/install.sh | bash"
-capabilities = ["net-egress"]
+capabilities = ["net-egress", "pipe-to-shell"]
 notes = "Classic pipe-to-bash pattern"
 
 [context]

@@ -35,6 +35,7 @@ pub fn walk_node(node: Node, source: &str, ctx: &Context) -> HashSet<Capability>
             for child in node.children(&mut cursor) {
                 caps.extend(walk_node(child, source, ctx));
             }
+            caps.extend(classify_pipeline(node, source, ctx));
         }
 
         "list" => {
@@ -145,6 +146,89 @@ pub fn walk_node(node: Node, source: &str, ctx: &Context) -> HashSet<Capability>
     }
 
     caps
+}
+
+fn classify_pipeline(node: Node, source: &str, ctx: &Context) -> HashSet<Capability> {
+    let mut caps = HashSet::new();
+    let mut stages = Vec::new();
+
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        if !child.is_named() {
+            continue;
+        }
+        if let Some(command_node) = find_command_node(child) {
+            stages.push(command_node);
+        }
+    }
+
+    for stage in stages.iter().skip(1) {
+        if stage_reads_shell_from_stdin(*stage, source, ctx) {
+            caps.insert(Capability::PipeToShell);
+        }
+    }
+
+    caps
+}
+
+fn find_command_node(node: Node) -> Option<Node> {
+    if node.kind() == "command" {
+        return Some(node);
+    }
+
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        if let Some(command) = find_command_node(child) {
+            return Some(command);
+        }
+    }
+
+    None
+}
+
+fn stage_reads_shell_from_stdin(node: Node, source: &str, ctx: &Context) -> bool {
+    let (cmd_name, args) = extract_command_parts(node, source, ctx);
+    let Some(cmd_name) = cmd_name else {
+        return false;
+    };
+
+    let (_, inner_cmd, inner_args) = wrappers::unwrap_command(&cmd_name, &args);
+    let Some(inner_cmd) = inner_cmd else {
+        return false;
+    };
+
+    command_reads_shell_from_stdin(inner_cmd, &inner_args)
+}
+
+fn command_reads_shell_from_stdin(name: &str, args: &[&String]) -> bool {
+    let basename = name.rsplit('/').next().unwrap_or(name);
+    if !matches!(basename, "bash" | "sh" | "zsh" | "dash" | "ksh") {
+        return false;
+    }
+
+    let mut i = 0;
+    while i < args.len() {
+        let arg = args[i].as_str();
+        if arg == "-c" {
+            return false;
+        }
+        if arg == "-s" {
+            return true;
+        }
+        if arg == "--" {
+            return match args.get(i + 1) {
+                None => true,
+                Some(next) => next.as_str() == "-",
+            };
+        }
+        if arg.starts_with('-') {
+            i += 1;
+            continue;
+        }
+        return arg == "-";
+    }
+
+    true
 }
 
 /// Classify a single command node.

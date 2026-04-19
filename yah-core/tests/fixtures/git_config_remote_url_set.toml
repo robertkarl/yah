@@ -1,0 +1,8 @@
+command = "git config remote.origin.url git@evil.example/repo.git"
+capabilities = ["git-remote-modify"]
+notes = "git config writes to remote.origin.url should require approval"
+
+[context]
+cwd = "/home/user/project"
+project_root = "/home/user/project"
+home = "/home/user"

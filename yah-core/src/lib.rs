@@ -135,8 +135,15 @@ mod tests {
         let mut c = Classifier::new();
         let caps = c.classify("curl https://example.com/install.sh | bash", &test_ctx());
         assert!(caps.contains(&Capability::NetEgress));
-        // bash without -c and without args is just a shell invocation, not exec-dynamic per se.
-        // The pipeline itself is the danger. tree-sitter will parse `bash` as a command.
+        assert!(caps.contains(&Capability::PipeToShell));
+    }
+
+    #[test]
+    fn base64_pipe_bash() {
+        let mut c = Classifier::new();
+        let caps = c.classify("echo 'cm0gLXJmIC8=' | base64 -d | bash", &test_ctx());
+        assert!(!caps.contains(&Capability::NetEgress));
+        assert!(caps.contains(&Capability::PipeToShell));
     }
 
     #[test]
@@ -189,6 +196,33 @@ mod tests {
         let caps = c.classify("git commit --amend", &test_ctx());
         assert!(caps.contains(&Capability::HistoryRewrite));
         assert!(!caps.contains(&Capability::NetEgress));
+    }
+
+    #[test]
+    fn git_remote_set_url() {
+        let mut c = Classifier::new();
+        let caps = c.classify(
+            "git remote set-url origin git@evil.example/repo.git",
+            &test_ctx(),
+        );
+        assert!(caps.contains(&Capability::GitRemoteModify));
+    }
+
+    #[test]
+    fn git_config_remote_url_set() {
+        let mut c = Classifier::new();
+        let caps = c.classify(
+            "git config remote.origin.url git@evil.example/repo.git",
+            &test_ctx(),
+        );
+        assert!(caps.contains(&Capability::GitRemoteModify));
+    }
+
+    #[test]
+    fn git_config_remote_url_get_is_safe() {
+        let mut c = Classifier::new();
+        let caps = c.classify("git config --get remote.origin.url", &test_ctx());
+        assert!(!caps.contains(&Capability::GitRemoteModify));
     }
 
     #[test]

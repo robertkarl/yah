@@ -33,11 +33,12 @@ Recommended Claude Code setup:
 Default policy (capability -> decision):
   allow:  write-inside-repo, delete-inside-repo, net-egress
   ask:    history-rewrite, and everything else (write-outside-repo, delete-outside-repo,
-          read-secret-path, exec-dynamic, privilege-escalation,
+          read-secret-path, exec-dynamic, pipe-to-shell, git-remote-modify, privilege-escalation,
           net-ingress, process-signal, package-install)
 
 Combination policy:
   deny:   history-rewrite + net-egress
+  deny:   pipe-to-shell + net-egress
 
 Command-specific overrides:
   deny:   pip/pip3 install (global), npm/yarn/pnpm install -g
@@ -308,6 +309,8 @@ fn cap_description(cap: &Capability) -> (&'static str, &'static str) {
     match cap {
         Capability::NetEgress => ("->", "Makes outbound network connections"),
         Capability::NetIngress => ("<-", "Listens for inbound network connections"),
+        Capability::PipeToShell => ("|>", "Pipes data into a shell interpreter"),
+        Capability::GitRemoteModify => ("Gr", "Modifies git remote configuration"),
         Capability::WriteInsideRepo => ("W+", "Writes to files inside the project"),
         Capability::WriteOutsideRepo => ("W!", "Writes to files outside the project"),
         Capability::DeleteInsideRepo => ("D+", "Deletes files inside the project"),
@@ -435,7 +438,7 @@ fn format_deny_reason(
     format!(
         "yah blocked this command. Capabilities detected: [{}]. \
          Denied by policy: [{}]. \
-         Edit default_policy() in yah-cli/src/main.rs to change. \
+         Edit capability_policy_rules() in yah-cli/src/main.rs to change. \
          Run `yah --help` to see current policy.",
         all.join(", "),
         evaluation.triggers.join(", "),
@@ -523,6 +526,18 @@ fn capability_policy_rules() -> Vec<CapabilityRule> {
             reason: "net-ingress".to_string(),
         },
         CapabilityRule {
+            all_of: cap_set([Capability::PipeToShell]),
+            none_of: cap_set([Capability::NetEgress]),
+            decision: PolicyDecision::Ask,
+            reason: "pipe-to-shell".to_string(),
+        },
+        CapabilityRule {
+            all_of: cap_set([Capability::GitRemoteModify]),
+            none_of: cap_set([]),
+            decision: PolicyDecision::Ask,
+            reason: "git-remote-modify".to_string(),
+        },
+        CapabilityRule {
             all_of: cap_set([Capability::WriteOutsideRepo]),
             none_of: cap_set([]),
             decision: PolicyDecision::Ask,
@@ -569,6 +584,12 @@ fn capability_policy_rules() -> Vec<CapabilityRule> {
             none_of: cap_set([]),
             decision: PolicyDecision::Deny,
             reason: "history-rewrite + net-egress".to_string(),
+        },
+        CapabilityRule {
+            all_of: cap_set([Capability::PipeToShell, Capability::NetEgress]),
+            none_of: cap_set([]),
+            decision: PolicyDecision::Deny,
+            reason: "pipe-to-shell + net-egress".to_string(),
         },
     ]
 }

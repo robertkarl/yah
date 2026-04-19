@@ -210,18 +210,17 @@ fn classify_package_install(basename: &str, args: &[String], caps: &mut HashSet<
 }
 
 fn classify_git(args: &[String], caps: &mut HashSet<Capability>) {
-    if args.is_empty() {
+    let Some((subcommand, subargs)) = git_subcommand_args(args) else {
         return;
-    }
+    };
 
-    let subcommand = &args[0];
-    let has_dynamic_args = args.iter().skip(1).any(|arg| git_arg_is_dynamic(arg));
-    match subcommand.as_str() {
+    let has_dynamic_args = subargs.iter().any(|arg| git_arg_is_dynamic(arg));
+    match subcommand {
         "push" => {
             if has_dynamic_args {
                 caps.insert(Capability::ExecDynamic);
             }
-            if args
+            if subargs
                 .iter()
                 .any(|a| a == "--force" || a == "-f" || a == "--force-with-lease")
             {
@@ -236,7 +235,7 @@ fn classify_git(args: &[String], caps: &mut HashSet<Capability>) {
             if has_dynamic_args {
                 caps.insert(Capability::ExecDynamic);
             }
-            if args.iter().any(|a| a == "--hard") {
+            if subargs.iter().any(|a| a == "--hard") {
                 caps.insert(Capability::HistoryRewrite);
             }
         }
@@ -250,7 +249,7 @@ fn classify_git(args: &[String], caps: &mut HashSet<Capability>) {
             if has_dynamic_args {
                 caps.insert(Capability::ExecDynamic);
             }
-            if args.iter().any(|a| a == "--amend") {
+            if subargs.iter().any(|a| a == "--amend") {
                 caps.insert(Capability::HistoryRewrite);
             }
         }
@@ -258,13 +257,15 @@ fn classify_git(args: &[String], caps: &mut HashSet<Capability>) {
             if has_dynamic_args {
                 caps.insert(Capability::ExecDynamic);
             }
-            if args
+            if subargs
                 .iter()
                 .any(|a| a == "-f" || a == "-fd" || a == "-fdx" || a == "--force")
             {
                 caps.insert(Capability::DeleteInsideRepo);
             }
         }
+        "remote" => classify_git_remote(subargs, caps),
+        "config" => classify_git_config(subargs, caps),
         _ => {}
     }
 }
@@ -275,6 +276,147 @@ fn git_arg_is_dynamic(arg: &str) -> bool {
         || arg.contains("$(")
         || arg.contains("<(")
         || arg.contains(">(")
+}
+
+fn git_subcommand_args(args: &[String]) -> Option<(&str, &[String])> {
+    let mut i = 0;
+    while i < args.len() {
+        let arg = args[i].as_str();
+        if !arg.starts_with('-') {
+            return Some((arg, &args[i + 1..]));
+        }
+
+        if git_option_takes_value(arg) {
+            i += 2;
+            continue;
+        }
+
+        i += 1;
+    }
+
+    None
+}
+
+fn git_option_takes_value(arg: &str) -> bool {
+    matches!(
+        arg,
+        "-C" | "--git-dir"
+            | "--work-tree"
+            | "--namespace"
+            | "--super-prefix"
+            | "--exec-path"
+            | "--config-env"
+    ) || arg == "-c"
+        || arg.starts_with("-c")
+        || arg.starts_with("--git-dir=")
+        || arg.starts_with("--work-tree=")
+        || arg.starts_with("--namespace=")
+        || arg.starts_with("--super-prefix=")
+        || arg.starts_with("--exec-path=")
+        || arg.starts_with("--config-env=")
+}
+
+fn classify_git_remote(args: &[String], caps: &mut HashSet<Capability>) {
+    let Some((action, action_args)) = first_non_flag_arg(args) else {
+        return;
+    };
+
+    if action_args.iter().any(|arg| git_arg_is_dynamic(arg)) {
+        caps.insert(Capability::ExecDynamic);
+    }
+
+    match action.as_str() {
+        "add" | "rename" | "remove" | "rm" | "set-head" | "set-branches" | "set-url" => {
+            caps.insert(Capability::GitRemoteModify);
+        }
+        _ => {}
+    }
+
+    if action == "add"
+        && action_args
+            .iter()
+            .any(|arg| arg == "-f" || arg == "--fetch")
+    {
+        caps.insert(Capability::NetEgress);
+    }
+}
+
+fn classify_git_config(args: &[String], caps: &mut HashSet<Capability>) {
+    let mut i = 0;
+    let mut mutates = false;
+
+    while i < args.len() {
+        let arg = args[i].as_str();
+        if !arg.starts_with('-') {
+            break;
+        }
+
+        if matches!(
+            arg,
+            "--add"
+                | "--replace-all"
+                | "--unset"
+                | "--unset-all"
+                | "--remove-section"
+                | "--rename-section"
+                | "--edit"
+        ) {
+            mutates = true;
+        }
+
+        if git_config_option_takes_value(arg) {
+            i += 2;
+        } else {
+            i += 1;
+        }
+    }
+
+    let Some(key) = args.get(i).map(|s| s.as_str()) else {
+        return;
+    };
+
+    if !key.starts_with("remote.") {
+        return;
+    }
+
+    let trailing = &args[i + 1..];
+    if trailing.iter().any(|arg| git_arg_is_dynamic(arg)) {
+        caps.insert(Capability::ExecDynamic);
+    }
+
+    if mutates || !trailing.is_empty() {
+        caps.insert(Capability::GitRemoteModify);
+    }
+}
+
+fn git_config_option_takes_value(arg: &str) -> bool {
+    matches!(arg, "-f" | "--file" | "--blob" | "--type" | "--default")
+        || arg.starts_with("--file=")
+        || arg.starts_with("--blob=")
+        || arg.starts_with("--type=")
+        || arg.starts_with("--default=")
+}
+
+fn first_non_flag_arg(args: &[String]) -> Option<(String, &[String])> {
+    let mut i = 0;
+    while i < args.len() {
+        let arg = args[i].as_str();
+        if !arg.starts_with('-') {
+            return Some((arg.to_string(), &args[i + 1..]));
+        }
+
+        if git_remote_option_takes_value(arg) {
+            i += 2;
+        } else {
+            i += 1;
+        }
+    }
+
+    None
+}
+
+fn git_remote_option_takes_value(arg: &str) -> bool {
+    matches!(arg, "-t" | "-m")
 }
 
 fn classify_xargs(args: &[String], caps: &mut HashSet<Capability>) {

@@ -1,6 +1,6 @@
 command = "echo 'cm0gLXJmIC8=' | base64 -d | bash"
-capabilities = []
-notes = "base64 decode piped to bash — bash without -c is just a shell, base64 and echo are harmless"
+capabilities = ["pipe-to-shell"]
+notes = "Local data piped to bash should still be recognized as pipe-to-shell"
 
 [context]
 cwd = "/home/user/project"
