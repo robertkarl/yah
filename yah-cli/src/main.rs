@@ -41,6 +41,7 @@ Combination policy:
   deny:   pipe-to-shell + net-egress
 
 Command-specific overrides:
+  deny:   rm -rf (use mv instead)
   deny:   pip/pip3 install (global), npm/yarn/pnpm install -g
   ask:    ssh/scp/sftp to sensitive hosts (192.168.50.57)
 
@@ -636,6 +637,26 @@ fn command_policy_override(command: &str) -> Option<(PolicyDecision, String)> {
     let (basename, args) = extract_override_command(&parts)
         .map(|(name, args)| (name.rsplit('/').next().unwrap_or(name), args))
         .unwrap_or_else(|| (parts[0].rsplit('/').next().unwrap_or(parts[0]), &parts[1..]));
+
+    // Deny rm -rf (recursive + force) — prefer `mv` to trash
+    if basename == "rm" {
+        let has_recursive = args.iter().any(|&a| {
+            a == "-r" || a == "-R" || a == "--recursive"
+                || (a.starts_with('-') && !a.starts_with("--") && (a.contains('r') || a.contains('R')))
+        });
+        let has_force = args.iter().any(|&a| {
+            a == "-f" || a == "--force"
+                || (a.starts_with('-') && !a.starts_with("--") && a.contains('f'))
+        });
+        if has_recursive && has_force {
+            return Some((
+                PolicyDecision::Deny,
+                "yah blocked rm -rf. Use `mv` to move files to trash or \
+                 a temporary location instead."
+                    .to_string(),
+            ));
+        }
+    }
 
     // Deny global pip/npm installs — these write outside the project
     // and Claude tries them constantly

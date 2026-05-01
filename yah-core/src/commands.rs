@@ -16,6 +16,7 @@ pub const NET_EGRESS_COMMANDS: &[&str] = &[
     "ftp",
     "ping",
     "traceroute",
+    "nmap",
     "dig",
     "nslookup",
     "host",
